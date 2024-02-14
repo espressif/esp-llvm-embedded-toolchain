@@ -138,3 +138,29 @@ Mappings:
 - Match: -mfpu=fp-armv8-fullfp16-d16
   Flags:
   - -mfpu=fp-armv8-fullfp16-sp-d16
+
+# RISCV -march extensions and mappings
+- Match: -march=rv32i
+  Flags:
+  - -march=rv32i_zicsr_zifencei
+- Match: -march=rv32ic
+  Flags:
+  - -march=rv32i_zicsr_zifencei
+- Match: -march=rv32im
+  Flags:
+  - -march=rv32imc_zicsr_zifencei
+- Match: -march=rv32imc
+  Flags:
+  - -march=rv32imc_zicsr_zifencei
+- Match: -march=rv32imac
+  Flags:
+  - -march=rv32imac_zicsr_zifencei
+- Match: -march=rv32imafc
+  Flags:
+  - -march=rv32imafc_zicsr_zifencei
+- Match: -march=rv32imafdc
+  Flags:
+  - -march=rv32imafc_zicsr_zifencei
+- Match: -march=rv32gc
+  Flags:
+  - -march=rv32imafc_zicsr_zifencei

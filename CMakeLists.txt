@@ -128,12 +128,88 @@ set(LLVM_TOOLCHAIN_LIBRARY_VARIANTS
     "Build only the specified library variants. If not specified then build all variants."
 )
 
+set(LLVM_TOOLCHAIN_ENABLED_TARGETS
+    "" CACHE STRING
+    "Build only the specified targets. If not specified then build all targets."
+)
+
+set(
+    USE_LIBC
+    "picolibc" CACHE STRING
+    "Build libc: picolibc, newlib or none."
+)
+
+set(
+    USE_RTLIB
+    "compiler-rt" CACHE STRING
+    "Build run time libs: compiler-rt, libgcc. Semicolon separated list."
+)
+
+set(
+    USE_LIBCXX
+    "libcxx" CACHE STRING
+    "Build libcxx: libcxx, libstdcxx. Semicolon separated list."
+)
+
+set(HOST_TRIPLE
+    "" CACHE STRING
+    "Host triple to build toolchain for."
+)
+
+option(
+    USE_BINUTILS
+    "Build GNU binutils."
+)
+
+option(
+    ESP_TOOLCHAIN
+    "Build Espressif toolchain."
+)
+
+set(MAKE_JOBS_NUM
+    "" CACHE STRING
+    "'make' jobs number."
+)
+
+set(ESP_GNU_TOOLCHAIN_VER
+    "13.2.0_20230928" CACHE STRING
+    "ESP GNU toolchain version to pick libgcc and libstdc++."
+)
+
+set(LLVM_PROJECT_REPO_URL
+    "https://github.com/espressif/llvm-project.git" CACHE STRING
+    "llvm-project repo URL."
+)
+
+set(NEWLIB_REPO_URL
+    "https://github.com/espressif/newlib-esp32.git" CACHE STRING
+    "Newlib repo URL."
+)
+
+set(BINUTILS_REPO_URL
+    "https://github.com/espressif/binutils-gdb.git" CACHE STRING
+    "Binutils repo URL."
+)
+
+set(XTENSA_OVERLAYS_REPO_URL
+    "https://github.com/espressif/xtensa-overlays.git" CACHE STRING
+    "Xtensa overlays repo URL."
+)
+
 set(BUG_REPORT_URL "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/issues" CACHE STRING "")
-set(LLVM_DISTRIBUTION_COMPONENTS
+
+set(LLVM_DISTRIBUTIONS
+    Toolchain
+    Libraries
+    CACHE STRING "")
+
+set(LLVM_Toolchain_DISTRIBUTION_COMPONENTS
     clang-format
     clang-resource-headers
+    clang-tidy
     clang
     dsymutil
+    llc
     lld
     llvm-ar
     llvm-config
@@ -153,7 +229,7 @@ set(LLVM_DISTRIBUTION_COMPONENTS
     LTO
     CACHE STRING ""
 )
-set(LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS
+set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS
     llvm-toolchain-config-files
     llvm-toolchain-docs
     llvm-toolchain-libs
@@ -162,9 +238,62 @@ set(LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS
     CACHE STRING "Components defined by this CMakeLists that should be
 installed by the install-llvm-toolchain target"
 )
-set(LLVM_ENABLE_PROJECTS clang;lld CACHE STRING "")
-set(LLVM_TARGETS_TO_BUILD AArch64;ARM CACHE STRING "")
-set(LLVM_DEFAULT_TARGET_TRIPLE aarch64-linux-gnu CACHE STRING "")
+
+set(LLVM_Libraries_DISTRIBUTION_COMPONENTS
+    clang-resource-headers
+    clang-cpp
+    libclang
+    LLVM
+    CACHE STRING "Components defined by this CMakeLists that should be
+installed by the install-libraries-distribution target"
+)
+set(LLVM_ENABLE_PROJECTS clang;lld;clang-tools-extra CACHE STRING "")
+
+set(LLVM_TOOLCHAIN_ENABLE_ARM ON)
+
+set(LLVM_TOOLCHAIN_ENABLE_RISCV ON)
+
+set(LLVM_TOOLCHAIN_ENABLE_XTENSA ON)
+
+if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW AND NOT 
+    (USE_LIBC STREQUAL "none" AND USE_RTLIB STREQUAL "" AND USE_LIBCXX STREQUAL ""))
+    message(FATAL_ERROR "Building runtime libraries is not supported for MinGW! (${USE_LIBC}/${USE_RTLIB}/${USE_LIBCXX})")
+endif()
+
+if(ESP_TOOLCHAIN)
+    set(PACKAGE_VENDOR Espressif CACHE STRING "")
+
+    set(LLVM_BUILD_LLVM_DYLIB ON CACHE STRING "")
+
+    set(LLVM_TOOLCHAIN_ENABLE_ARM OFF)
+    if(NOT "RISCV" IN_LIST LLVM_TOOLCHAIN_ENABLED_TARGETS)
+        set(LLVM_TOOLCHAIN_ENABLE_RISCV OFF)
+    endif()
+    if(NOT "Xtensa" IN_LIST LLVM_TOOLCHAIN_ENABLED_TARGETS)
+        set(LLVM_TOOLCHAIN_ENABLE_XTENSA OFF)
+    endif()
+    if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+        set(LLVM_TARGETS_TO_BUILD RISCV CACHE STRING "")
+        set(LLVM_DEFAULT_TARGET_TRIPLE riscv32-esp-elf CACHE STRING "")
+        set(CPACK_PACKAGE_NAME "riscv-clang" CACHE STRING "")
+    endif()
+    if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+        set(LLVM_EXPERIMENTAL_TARGETS_TO_BUILD Xtensa CACHE STRING "")
+        set(LLVM_DEFAULT_TARGET_TRIPLE xtensa-esp-elf CACHE STRING "")
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            set(CPACK_PACKAGE_NAME "riscv-xtensa-clang" CACHE STRING "")
+        else()
+            set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "")
+            set(CPACK_PACKAGE_NAME "xtensa-clang" CACHE STRING "")
+        endif()
+    endif()
+    set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME})
+else()
+    set(LLVM_TOOLCHAIN_ENABLE_RISCV OFF)
+    set(LLVM_TOOLCHAIN_ENABLE_XTENSA OFF)
+    set(LLVM_TARGETS_TO_BUILD AArch64;ARM CACHE STRING "")
+    set(LLVM_DEFAULT_TARGET_TRIPLE aarch64-linux-gnu CACHE STRING "")
+endif()
 set(LLVM_APPEND_VC_REV OFF CACHE BOOL "")
 set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "")
 set(CLANG_DEFAULT_LINKER lld CACHE STRING "")
@@ -177,6 +306,38 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+if(ESP_TOOLCHAIN)
+    if(HOST_TRIPLE MATCHES "darwin")
+        set(CMAKE_C_COMPILER "${HOST_TRIPLE}-clang" CACHE STRING "" FORCE)
+        set(CMAKE_CXX_COMPILER "${HOST_TRIPLE}-clang++" CACHE STRING "" FORCE)
+        set(CMAKE_SYSTEM_NAME Darwin CACHE STRING "" FORCE)
+        string(REPLACE "-" ";" triple_comps ${HOST_TRIPLE})
+        list(GET triple_comps 0 arch)
+        if(arch STREQUAL "aarch64")
+            set(CMAKE_OSX_ARCHITECTURES arm64 CACHE STRING "" FORCE)
+        else()
+            set(CMAKE_OSX_ARCHITECTURES ${arch} CACHE STRING "" FORCE)
+        endif()
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "" FORCE)
+        set(CMAKE_SYSTEM_VERSION 10.13 CACHE STRING "" FORCE)
+    elseif(HOST_TRIPLE MATCHES "linux-gnu")
+        set(CMAKE_C_COMPILER "${HOST_TRIPLE}-gcc" CACHE STRING "" FORCE)
+        set(CMAKE_CXX_COMPILER "${HOST_TRIPLE}-g++" CACHE STRING "" FORCE)
+        if(HOST_TRIPLE MATCHES "^arm-linux")
+            set(CMAKE_SYSTEM_NAME Linux CACHE STRING "" FORCE)
+            set(LLVM_HOST_TRIPLE ${HOST_TRIPLE} CACHE STRING "")
+            set(CMAKE_CXX_FLAGS "-march=armv7-a -mtune=cortex-a9" CACHE STRING "" FORCE)
+        elseif(HOST_TRIPLE MATCHES "^aarch64-linux")
+            set(CMAKE_SYSTEM_NAME Linux CACHE STRING "" FORCE)
+            set(LLVM_HOST_TRIPLE ${HOST_TRIPLE} CACHE STRING "")
+            set(CMAKE_CXX_FLAGS "-march=armv8-a -mtune=cortex-a72" CACHE STRING "" FORCE)
+        endif()
+        if(HOST_TRIPLE MATCHES "gnueabihf")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfloat-abi=hard" CACHE STRING "" FORCE)
+        endif()
+    endif()
+endif()
 
 if(NOT CMAKE_C_COMPILER_LAUNCHER AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
     # If ccache is available then use it by default.
@@ -235,20 +396,45 @@ function(read_repo_version output_variable_prefix repo)
     set(${output_variable_prefix}_SHALLOW "${shallow}" PARENT_SCOPE)
 endfunction()
 read_repo_version(llvmproject llvm-project)
-read_repo_version(picolibc picolibc)
+if(USE_LIBC STREQUAL "picolibc")
+    read_repo_version(picolibc picolibc)
+elseif(USE_LIBC STREQUAL "newlib")
+    read_repo_version(newlib newlib-esp32)
+endif()
+if(USE_BINUTILS)
+    read_repo_version(binutils binutils-gdb)
+endif()
 
-FetchContent_Declare(llvmproject
-    GIT_REPOSITORY https://github.com/llvm/llvm-project.git
-    GIT_TAG "${llvmproject_TAG}"
-    GIT_SHALLOW "${llvmproject_SHALLOW}"
-    GIT_PROGRESS TRUE
-    PATCH_COMMAND git reset --quiet --hard && git clean --quiet --force -dx && git apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/llvm-project.patch
-    # Add the llvm subdirectory later to ensure that
-    # LLVMEmbeddedToolchainForArm is the first project declared.
-    # Otherwise CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
-    # can't be used.
-    SOURCE_SUBDIR do_not_add_llvm_subdir_yet
-)
+if(ESP_TOOLCHAIN)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/esp-gnu-components.cmake)
+endif()
+
+if(ESP_TOOLCHAIN)
+    FetchContent_Declare(llvmproject
+        GIT_REPOSITORY ${LLVM_PROJECT_REPO_URL}
+        GIT_TAG "${llvmproject_TAG}"
+        GIT_SHALLOW "${llvmproject_SHALLOW}"
+        GIT_PROGRESS TRUE
+        # Add the llvm subdirectory later to ensure that
+        # LLVMEmbeddedToolchainForArm is the first project declared.
+        # Otherwise CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
+        # can't be used.
+        SOURCE_SUBDIR do_not_add_llvm_subdir_yet
+    )
+else()
+    FetchContent_Declare(llvmproject
+        GIT_REPOSITORY https://github.com/llvm/llvm-project.git
+        GIT_TAG "${llvmproject_TAG}"
+        GIT_SHALLOW "${llvmproject_SHALLOW}"
+        GIT_PROGRESS TRUE
+        PATCH_COMMAND git reset --quiet --hard && git clean --quiet --force -dx && git apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/llvm-project.patch
+        # Add the llvm subdirectory later to ensure that
+        # LLVMEmbeddedToolchainForArm is the first project declared.
+        # Otherwise CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
+        # can't be used.
+        SOURCE_SUBDIR do_not_add_llvm_subdir_yet
+    )
+endif()
 
 FetchContent_Declare(picolibc
     GIT_REPOSITORY https://github.com/picolibc/picolibc.git
@@ -262,8 +448,76 @@ FetchContent_Declare(picolibc
     SOURCE_SUBDIR do_not_add_picolibc_subdir
 )
 
+FetchContent_Declare(newlib
+    GIT_REPOSITORY ${NEWLIB_REPO_URL}
+    GIT_TAG "${newlib_TAG}"
+    GIT_SHALLOW "${newlib_SHALLOW}"
+    GIT_PROGRESS TRUE
+    # We only want to download the content, not configure it at this
+    # stage. newlib will be built in many configurations using
+    # ExternalProject_Add using the sources that are checked out here.
+    SOURCE_SUBDIR do_not_add_newlib_subdir
+)
+
+# Currently ESP toolchain picks libgcc and libstdc++ libraries from GNU toolchain
+FetchContent_Declare(esp_riscv32_gnu_toolchain
+    URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${ESP_GNU_TOOLCHAIN_VER}/riscv32-esp-elf-${ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
+    URL_HASH MD5=69bae22d7c7812853523824c426244f0
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+)
+FetchContent_Declare(esp_xtensa_gnu_toolchain
+    URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${ESP_GNU_TOOLCHAIN_VER}/xtensa-esp-elf-${ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
+    URL_HASH MD5=02f40d68927fd0383912abde72fa7c02
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+)
+
+FetchContent_Declare(binutils
+    GIT_REPOSITORY ${BINUTILS_REPO_URL}
+    GIT_TAG "${binutils_TAG}"
+    GIT_SHALLOW "${binutils_SHALLOW}"
+    GIT_PROGRESS TRUE
+    # We only want to download the content, not configure it at this
+    # stage. binutils will be built in many configurations using
+    # ExternalProject_Add using the sources that are checked out here.
+    SOURCE_SUBDIR do_not_add_binutils_subdir
+)
+
+FetchContent_Declare(xtensa_overlays
+    GIT_REPOSITORY ${XTENSA_OVERLAYS_REPO_URL}
+    GIT_TAG "${xtensa_overlays_TAG}"
+    GIT_SHALLOW "${xtensa_overlays_SHALLOW}"
+    GIT_PROGRESS TRUE
+    # We only want to download the content, not configure it at this
+    # stage. binutils will be built in many configurations using
+    # ExternalProject_Add using the sources that are checked out here.
+    SOURCE_SUBDIR do_not_add_xtensa_overlays_subdir
+)
+
 FetchContent_MakeAvailable(llvmproject)
-FetchContent_MakeAvailable(picolibc)
+if(USE_LIBC STREQUAL "picolibc")
+    FetchContent_MakeAvailable(picolibc)
+elseif(USE_LIBC STREQUAL "newlib")
+    FetchContent_MakeAvailable(newlib)
+endif()
+
+if(USE_BINUTILS)
+    FetchContent_MakeAvailable(binutils)
+endif()
+
+if(ESP_TOOLCHAIN AND (USE_BINUTILS OR USE_LIBC STREQUAL "newlib"))
+    FetchContent_MakeAvailable(xtensa_overlays)
+endif()
+
+if(ESP_TOOLCHAIN)
+    if("libstdcxx" IN_LIST USE_LIBCXX OR "libgcc" IN_LIST USE_RTLIB)
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            FetchContent_MakeAvailable(esp_riscv32_gnu_toolchain)
+        endif()
+        if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            FetchContent_MakeAvailable(esp_xtensa_gnu_toolchain)
+        endif()
+    endif()
+endif()
 
 function(get_llvm_version_numbers llvmproject_SOURCE_DIR)
     # Grab the version out of LLVM sources
@@ -280,12 +534,58 @@ function(get_llvm_version_numbers llvmproject_SOURCE_DIR)
 endfunction()
 get_llvm_version_numbers(${llvmproject_SOURCE_DIR})
 
-project(
-    LLVMEmbeddedToolchainForArm
-    VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
-    DESCRIPTION "LLVM Embedded Toolchain for Arm"
-    HOMEPAGE_URL "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm"
-)
+if(ESP_TOOLCHAIN)
+    set(LLVM_APPEND_VC_REV OFF CACHE BOOL "" FORCE)
+    if("${CLANG_REPOSITORY_STRING}" STREQUAL "")
+        execute_process(
+            COMMAND git remote get-url origin
+            WORKING_DIRECTORY ${FETCHCONTENT_SOURCE_DIR_LLVMPROJECT}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            set(result "<unknown repo>")
+            message("This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
+        endif()
+        set(CLANG_REPOSITORY_STRING "${result}")
+    endif()
+    if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
+        execute_process(
+            COMMAND git describe --abbrev=7
+            WORKING_DIRECTORY ${FETCHCONTENT_SOURCE_DIR_LLVMPROJECT}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            set(result "<unknown commit>")
+            message(STATUS "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
+        endif()
+        set(ESP_TOOLCHAIN_VER "${result}")
+    endif()
+    set(CLANG_REPOSITORY_STRING "${CLANG_REPOSITORY_STRING} ${ESP_TOOLCHAIN_VER}" CACHE STRING "" FORCE)
+
+    project(
+        EspLLVMEmbeddedToolchain
+        VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
+        DESCRIPTION "Espressif LLVM Embedded Toolchain"
+        HOMEPAGE_URL "https://github.com/espressif/esp-llvm-embedded-toolchain"
+    )
+else()
+    project(
+        LLVMEmbeddedToolchainForArm
+        VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
+        DESCRIPTION "LLVM Embedded Toolchain for Arm"
+        HOMEPAGE_URL "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm"
+    )
+endif()
+
+if(HOST_TRIPLE MATCHES "^arm")
+    set(CMAKE_SYSTEM_PROCESSOR arm CACHE STRING "" FORCE)
+elseif(HOST_TRIPLE MATCHES "^aarch64")
+    set(CMAKE_SYSTEM_PROCESSOR aarch64 CACHE STRING "" FORCE)
+endif()
 
 # We generally want to install to a local directory to see what the
 # output will look like rather than install into the system, so change
@@ -303,10 +603,32 @@ endif()
 # These must be set before include(CPack) which the llvm CMakeLists.txt does.
 # Restrict which LLVM components are installed.
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
-    set(CPACK_COMPONENTS_ALL ${LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS} llvm-toolchain-mingw)
+    set(CPACK_COMPONENTS_ALL ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS} llvm-toolchain-mingw)
 else()
-    set(CPACK_COMPONENTS_ALL ${LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS} ${LLVM_DISTRIBUTION_COMPONENTS})
+    set(CPACK_COMPONENTS_ALL ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS} ${LLVM_Toolchain_DISTRIBUTION_COMPONENTS})
 endif()
+
+if(ESP_TOOLCHAIN)
+    if("libstdcxx" IN_LIST USE_LIBCXX)
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-headers_riscv32-esp-elf)
+        endif()
+        if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-headers_xtensa-esp-elf)
+        endif()
+    endif()
+    if(USE_BINUTILS)
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-binutils_riscv32-esp-elf)
+        endif()
+        if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-binutils_xtensa-esp32-elf)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-binutils_xtensa-esp32s2-elf)
+            set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} llvm-toolchain-gnu-binutils_xtensa-esp32s3-elf)
+        endif()
+    endif()
+endif()
+
 # Enable limiting the installed components in TGZ and ZIP packages.
 set(CPACK_ARCHIVE_COMPONENT_INSTALL TRUE)
 # Don't create a separate archive for each component.
@@ -314,21 +636,29 @@ set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
 # When extracting the files put them in an ArmCompiler-.../ directory.
 set(CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY TRUE)
 
-if(CMAKE_OSX_ARCHITECTURES)
-    # For universal binaries don't include architecture in the package name.
-    set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}")
-else()
-    string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} processor_name)
-    string(REGEX MATCH "amd64|x64|x86" x86_match ${processor_name})
-    if(x86_match)
-        set(processor_name "x86_64")
+if(ESP_TOOLCHAIN)
+    if(CMAKE_OSX_ARCHITECTURES)
+        string(REGEX REPLACE "darwin[0-9]+\.[0-9]+" "darwin" CPACK_SYSTEM_NAME ${HOST_TRIPLE})
     else()
-        set(processor_name "AArch64")
+        set(CPACK_SYSTEM_NAME "${HOST_TRIPLE}")
     endif()
-    if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
-        set(CPACK_SYSTEM_NAME "Windows-${processor_name}")
+else()
+    if(CMAKE_OSX_ARCHITECTURES)
+        # For universal binaries don't include architecture in the package name.
+        set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}")
     else()
-        set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-${processor_name}")
+        string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} processor_name)
+        string(REGEX MATCH "amd64|x64|x86" x86_match ${processor_name})
+        if(x86_match)
+            set(processor_name "x86_64")
+        else()
+            set(processor_name "AArch64")
+        endif()
+        if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
+            set(CPACK_SYSTEM_NAME "Windows-${processor_name}")
+        else()
+            set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-${processor_name}")
+        endif()
     endif()
 endif()
 
@@ -346,12 +676,14 @@ llvm_install_symlink(LLVM llvm-ranlib llvm-ar ALWAYS_GENERATE)
 llvm_install_symlink(LLVM llvm-readelf llvm-readobj ALWAYS_GENERATE)
 llvm_install_symlink(LLVM llvm-strip llvm-objcopy ALWAYS_GENERATE)
 
-# For building picolibc use Meson.
-# Although picolibc has support for building with CMake, the Meson code
-# is more mature and works better with LLVM.
-find_program(MESON_EXECUTABLE meson REQUIRED)
+if(USE_LIBC STREQUAL "picolibc")
+    # For building picolibc use Meson.
+    # Although picolibc has support for building with CMake, the Meson code
+    # is more mature and works better with LLVM.
+    find_program(MESON_EXECUTABLE meson REQUIRED)
 
-include(cmake/to_meson_list.cmake)
+    include(cmake/to_meson_list.cmake)
+endif()
 
 # Generate VERSION.txt
 # Use add_custom_target instead of add_custom_command so that the target
@@ -365,6 +697,8 @@ add_custom_target(
     -DLLVMEmbeddedToolchainForArm_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     -Dllvmproject_SOURCE_DIR=${llvmproject_SOURCE_DIR}
     -Dpicolibc_SOURCE_DIR=${picolibc_SOURCE_DIR}
+    -Dnewlib_SOURCE_DIR=${newlib_SOURCE_DIR}
+    -Dbinutils_SOURCE_DIR=${binutils_SOURCE_DIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_version_txt.cmake
     BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/VERSION.txt
 )
@@ -397,10 +731,12 @@ add_dependencies(
     check-cxx
 )
 
+add_custom_target(llvm-standalone-libs)
+
 if(NOT LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
     add_dependencies(
         llvm-toolchain
-        ${LLVM_DISTRIBUTION_COMPONENTS}
+        ${LLVM_Toolchain_DISTRIBUTION_COMPONENTS}
     )
 endif()
 
@@ -410,24 +746,43 @@ add_dependencies(
     version_txt
 )
 
-foreach(variant ${LLVM_TOOLCHAIN_LIBRARY_VARIANTS})
-    set(enable_${variant} TRUE)
-endforeach()
 
-set(picolibc_specific_runtimes_options
-    -DLIBCXXABI_ENABLE_EXCEPTIONS=OFF
-    -DLIBCXXABI_ENABLE_THREADS=OFF
-    -DLIBCXX_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++-picolibc.cfg.in
-    -DLIBCXX_ENABLE_EXCEPTIONS=OFF
-    -DLIBCXXABI_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++abi-picolibc.cfg.in
-    -DLIBCXX_ENABLE_MONOTONIC_CLOCK=OFF
-    -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF
-    -DLIBCXX_ENABLE_RTTI=OFF
-    -DLIBCXX_ENABLE_THREADS=OFF
-    -DLIBCXX_ENABLE_WIDE_CHARACTERS=OFF
-    -DLIBUNWIND_ENABLE_THREADS=OFF
-    -DLIBUNWIND_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libunwind-picolibc.cfg.in
-)
+if(NOT LLVM_TOOLCHAIN_LIBRARY_VARIANTS STREQUAL "none")
+    foreach(variant ${LLVM_TOOLCHAIN_LIBRARY_VARIANTS})
+        set(enable_${variant} TRUE)
+    endforeach()
+endif()
+
+if(USE_LIBC STREQUAL "picolibc")
+    set(picolibc_specific_runtimes_options
+        -DLIBCXXABI_ENABLE_EXCEPTIONS=OFF
+        -DLIBCXXABI_ENABLE_THREADS=OFF
+        -DLIBCXX_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++-picolibc.cfg.in
+        -DLIBCXX_ENABLE_EXCEPTIONS=OFF
+        -DLIBCXXABI_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++abi-picolibc.cfg.in
+        -DLIBCXX_ENABLE_MONOTONIC_CLOCK=OFF
+        -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF
+        -DLIBCXX_ENABLE_THREADS=OFF
+        -DLIBCXX_ENABLE_WIDE_CHARACTERS=OFF
+        -DLIBUNWIND_ENABLE_THREADS=OFF
+        -DLIBUNWIND_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libunwind-picolibc.cfg.in
+    )
+elseif(USE_LIBC STREQUAL "newlib")
+    set(newlib_specific_runtimes_options
+        -DLIBCXXABI_ENABLE_EXCEPTIONS=ON
+        -DLIBCXXABI_ENABLE_THREADS=ON
+        -DLIBCXXABI_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++abi-newlib.cfg.in
+        -DLIBCXX_ENABLE_EXCEPTIONS=ON
+        -DLIBCXX_ENABLE_MONOTONIC_CLOCK=ON
+        -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF
+        -DLIBCXX_ENABLE_THREADS=ON
+        -DLIBCXX_HAS_PTHREAD_API=ON
+        -DLIBCXX_ENABLE_WIDE_CHARACTERS=ON
+        -DLIBCXX_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++-newlib.cfg.in
+        -DLIBUNWIND_ENABLE_THREADS=ON
+        -DLIBUNWIND_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libunwind-newlib.cfg.in
+    )
+endif()
 
 add_custom_target(check-picolibc)
 # Set LLVM_DEFAULT_EXTERNAL_LIT to the directory of clang
@@ -436,7 +791,11 @@ add_custom_target(check-picolibc)
 set(LLVM_DEFAULT_EXTERNAL_LIT "${LLVM_BINARY_DIR}/bin/llvm-lit")
 
 function(get_test_executor target_triple qemu_machine qemu_cpu qemu_params)
-    if(target_triple MATCHES "^aarch64")
+    if(target_triple MATCHES "^riscv32")
+        set(qemu_command "qemu-riscv32")
+    elseif(target_triple MATCHES "^xtensa")
+        set(qemu_command "qemu-system-xtensa")
+    elseif(target_triple MATCHES "^aarch64")
         set(qemu_command "qemu-system-aarch64")
     else()
         set(qemu_command "qemu-system-arm")
@@ -621,6 +980,169 @@ function(
     )
 endfunction()
 
+function(
+    add_newlib
+    directory
+    variant
+    host_triple
+    target_triple
+    flags
+    test_executor
+)
+    if(CMAKE_INSTALL_MESSAGE STREQUAL NEVER)
+        # set(MESON_INSTALL_QUIET "--quiet")
+    endif()
+
+    if(variant MATCHES "_nano$")
+        list(APPEND config_opts
+            --disable-multilib
+            --with-newlib
+            --disable-newlib-io-c99-formats
+            --disable-newlib-supplied-syscalls --enable-newlib-nano-formatted-io
+            --enable-newlib-reent-small --enable-target-optspace
+            --enable-newlib-nano-malloc --enable-newlib-retargetable-locking
+            --disable-newlib_wide_orient
+            --enable-newlib-iconv 
+        )
+    else()
+        list(APPEND config_opts
+            --disable-multilib
+            --with-newlib
+            --enable-newlib-io-float --disable-newlib-io-long-double
+            --disable-newlib-supplied-syscalls --enable-newlib-io-pos-args
+            --enable-newlib-io-c99-formats --enable-newlib-io-long-long
+            --disable-newlib-register-fini --disable-newlib-nano-malloc
+            --disable-newlib-nano-formatted-io --enable-newlib-atexit-dynamic-alloc
+            --disable-newlib-global-atexit --disable-lite-exit --enable-newlib-reent-small
+            --enable-newlib-multithread
+            --disable-newlib-wide-orient --enable-newlib-fseek-optimization
+            --enable-newlib-fvwrite-in-streamio --enable-newlib-unbuf-stream-opt
+            --enable-target-optspace --enable-newlib-retargetable-locking
+            --enable-newlib-iconv 
+        )
+    endif()
+
+    set(newlib_src_dir ${newlib_SOURCE_DIR})
+
+    if(target_triple MATCHES "^riscv32")
+        set(cpu generic-rv32)
+        set(newlib_target_triple ${target_triple})
+    elseif(target_triple MATCHES "^xtensa-esp")
+        get_xtensa_cpu(${variant} cpu)
+        get_xtensa_target_triple(${variant} newlib_target_triple)
+        # newlib sources are patched for every Xtensa CPU, 
+        # so create separate source dir for every CPU to avoid source conflicts when building in parallel
+        get_filename_component(newlib_src_dir ${newlib_SOURCE_DIR} NAME)
+        set(newlib_src_dir /tmp/${newlib_src_dir}_${newlib_target_triple})
+        message(STATUS "Make source dir copy for ${cpu}. ${newlib_SOURCE_DIR} -> ${newlib_src_dir}")
+        file(COPY ${newlib_SOURCE_DIR}/ DESTINATION ${newlib_src_dir})
+        message(STATUS "Apply Xtensa overlay for ${cpu}. ${xtensa_overlays_SOURCE_DIR}/xtensa_${cpu}/newlib -> ${newlib_src_dir}")
+        file(COPY ${xtensa_overlays_SOURCE_DIR}/xtensa_${cpu}/newlib/ DESTINATION ${newlib_src_dir})
+    else()
+        message(FATAL_ERROR "Unsupported target triple ${target_triple}")
+    endif()
+
+    # Force using DWARF v4 because current version of GCC assembler does not support DWARF v5,
+    # which is default for Clang 14.
+    # Clamg 15 has tighten the rules for '-Wimplicit-function-declaration' (https://reviews.llvm.org/rG7d644e1215b3)
+    # and '-Wint-conversion' (https://reviews.llvm.org/rG7068aa98412a)
+    set(extra_cflags_for_target "-fdebug-default-version=4 -Wno-implicit-function-declaration -Wno-int-conversion")
+    # avoid spurious "warning: argument unused during compilation: '-L/mnt/host/projects/esp/newlib-cygwin/libgloss/riscv32' [-Wunused-command-line-argument]""
+    set(extra_cflags_for_target "${extra_cflags_for_target} -Wno-unused-command-line-argument")
+
+    # Target and cpu flags have to be passed as part of CC_FOR_TARGET, since newlib
+    # will use "$(CC_FOR_TARGET) -print-multi-lib" to determine the multilib set,
+    # and the set depends on the target and CPU.
+    set(cxx_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang++${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
+    set(cc_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
+    set(gcc_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
+    set(cflags_for_target "${flags} -ffreestanding -O2 -g -ffunction-sections -fdata-sections ${extra_cflags_for_target}")
+
+    ExternalProject_Add(
+        newlib_${variant}
+        SOURCE_DIR ${newlib_src_dir}
+        INSTALL_DIR "${LLVM_BINARY_DIR}/${directory}"
+        PREFIX newlib_${variant}
+        DEPENDS clang lld llvm-ar llvm-config llvm-nm llvm-ranlib llvm-strip llvm-readelf
+        CONFIGURE_COMMAND 
+            env CFLAGS_FOR_TARGET=${cflags_for_target}
+            env GCC_FOR_TARGET=${gcc_for_target} 
+            env CC_FOR_TARGET=${cc_for_target} 
+            env CXX_FOR_TARGET=${cxx_for_target}
+            env LD_FOR_TARGET=${LLVM_BINARY_DIR}/bin/lld${CMAKE_EXECUTABLE_SUFFIX}
+            env AR_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-ar${CMAKE_EXECUTABLE_SUFFIX}
+            env RANLIB_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-ranlib${CMAKE_EXECUTABLE_SUFFIX}
+            env READELF_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-readelf${CMAKE_EXECUTABLE_SUFFIX}
+            env STRIP_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-strip${CMAKE_EXECUTABLE_SUFFIX}
+            ${newlib_src_dir}/configure --host=${host_triple} --target=${newlib_target_triple} --prefix=<INSTALL_DIR> ${config_opts}
+        BUILD_COMMAND make -j${MAKE_JOBS_NUM}
+        INSTALL_COMMAND make install
+        USES_TERMINAL_CONFIGURE TRUE
+        USES_TERMINAL_BUILD TRUE
+        USES_TERMINAL_TEST TRUE
+        # LIST_SEPARATOR " "
+        # Always run the build command so that incremental builds are correct.
+        BUILD_ALWAYS TRUE
+        # CONFIGURE_HANDLED_BY_BUILD TRUE
+    )
+
+    ExternalProject_Get_property(newlib_${variant} INSTALL_DIR)
+    if(ESP_TOOLCHAIN AND variant MATCHES "_nano$")
+        set(nano_variant_install_dir ${INSTALL_DIR})
+        string(REGEX REPLACE "_nano$" "" non_nano_variant ${variant})
+        ExternalProject_Get_property(newlib_${non_nano_variant} INSTALL_DIR)
+        ExternalProject_Add_Step(
+            newlib_${variant}
+            post-install
+            # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
+            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step <INSTALL_DIR>/${newlib_target_triple}/lib/lib{c,g,m} -> ${INSTALL_DIR}/nano"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/lib/nano
+            COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/${newlib_target_triple}/lib/libc.a 
+                                             <INSTALL_DIR>/${newlib_target_triple}/lib/libm.a
+                                             <INSTALL_DIR>/${newlib_target_triple}/lib/libg.a
+                                             ${INSTALL_DIR}/lib/nano/
+            DEPENDEES install
+            ALWAYS TRUE
+            USES_TERMINAL TRUE
+        )
+        ExternalProject_Add_StepDependencies(
+            newlib_${variant}
+            post-install
+            newlib_${non_nano_variant}-post-install
+        )
+    else()
+        ExternalProject_Add_Step(
+            newlib_${variant}
+            post-install
+            # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
+            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step ${INSTALL_DIR}/${newlib_target_triple}/* -> ${INSTALL_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different <INSTALL_DIR>/${newlib_target_triple} <INSTALL_DIR>
+            COMMAND ${CMAKE_COMMAND} -E rm -rf <INSTALL_DIR>/${newlib_target_triple}
+            DEPENDEES install
+            ALWAYS TRUE
+            USES_TERMINAL TRUE
+        )
+        ExternalProject_Add_StepTargets(
+            newlib_${variant}
+            post-install
+        )
+    endif()
+
+    add_dependencies(
+        llvm-toolchain-runtimes
+        newlib_${variant}
+    )
+
+    if(ESP_TOOLCHAIN)
+        message(STATUS "Add dep newlib_${variant} -> binutils_${newlib_target_triple}")
+        add_dependencies(
+            newlib_${variant}
+            binutils_${newlib_target_triple}
+        )
+    endif()
+
+endfunction()
+
 function(get_runtimes_flags directory flags)
     set(runtimes_flags "${flags} -ffunction-sections -fdata-sections -fno-ident --sysroot ${LLVM_BINARY_DIR}/${directory}" PARENT_SCOPE)
 endfunction()
@@ -642,7 +1164,7 @@ function(
     # Exceptions are architectures pre-armv7, which compiler-rt expects to
     # see in the triple because that's where it looks to decide whether to
     # use specific assembly sources.
-    if(NOT target_triple MATCHES "^(aarch64-none-elf|arm-none-eabi|armv[4-6])")
+    if(NOT target_triple MATCHES "^(aarch64-none-elf|arm-none-eabi|armv[4-6]|riscv32-esp-elf|xtensa-esp-elf)")
         message(FATAL_ERROR "\
 Target triple name \"${target_triple}\" not compatible with compiler-rt.
 Use -march to specify the architecture.")
@@ -656,7 +1178,19 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
 
     get_runtimes_flags("${directory}" "${flags}")
 
-    set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg -T ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/test-support/ldscripts/picolibc_${variant}.ld")
+    if(USE_LIBC STREQUAL "picolibc")
+        set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg -T ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/test-support/ldscripts/picolibc_${variant}.ld")
+    elseif(USE_LIBC STREQUAL "newlib")
+        set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg -ffreestanding")
+        if(target_triple MATCHES "^riscv32-esp-elf")
+        elseif(target_triple MATCHES "^xtensa-esp-elf")
+            get_xtensa_target_triple(${variant} xtensa_target_triple)
+            set(compiler_rt_test_flags "${compiler_rt_test_flags} -T memory.elf.ld -T app.elf.ld --ld-path=${xtensa_target_triple}-ld")
+        else()
+            message(FATAL_ERROR "compiler-rt+newlib tests are not supported for '${target_triple}' target!")
+        endif()
+    endif()
+
     if(variant STREQUAL "armv6m_soft_nofp")
         set(compiler_rt_test_flags "${compiler_rt_test_flags} -fomit-frame-pointer")
     endif()
@@ -686,6 +1220,8 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         -DCMAKE_SYSTEM_NAME=Generic
         -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
         -DCOMPILER_RT_BAREMETAL_BUILD=ON
+        # TODO: disable COMPILER_RT_BUILTINS_ENABLE_PIC for Xtensa only
+        -DCOMPILER_RT_BUILTINS_ENABLE_PIC=OFF
         -DCOMPILER_RT_BUILD_LIBFUZZER=OFF
         -DCOMPILER_RT_BUILD_PROFILE=OFF
         -DCOMPILER_RT_BUILD_SANITIZERS=OFF
@@ -801,7 +1337,15 @@ function(
     )
 endfunction()
 
-function(add_compiler_rt_tests variant)
+function(add_compiler_rt_tests variant target_triple)
+    if(ESP_TOOLCHAIN AND target_triple MATCHES "^xtensa-esp-elf")
+        get_xtensa_cpu(${variant} xtensa_cpu)
+        if(NOT ${xtensa_cpu} STREQUAL "esp32")
+            message(STATUS "Skip adding compiler-rt tests for '${xtensa_cpu}'. No QEMU support yet.")
+            return()
+        endif()
+    endif()
+
     ExternalProject_Add_Step(
         compiler_rt_${variant}
         check-compiler-rt
@@ -820,6 +1364,16 @@ function(add_compiler_rt_tests variant)
     add_dependencies(check-compiler-rt-${variant} compiler_rt_${variant}-check-compiler-rt)
     add_dependencies(check-compiler-rt check-compiler-rt-${variant})
     add_dependencies(check-llvm-toolchain-runtimes-${variant} check-compiler-rt-${variant})
+    if(ESP_TOOLCHAIN)
+        # need GNU LD to build tests
+        if(target_triple MATCHES "^xtensa-esp-elf")
+            get_xtensa_target_triple(${variant} xtensa_target_triple)
+            add_dependencies(
+                check-compiler-rt-${variant}
+                binutils_${xtensa_target_triple}
+            )    
+        endif()
+    endif()
 endfunction()
 
 function(add_libcxx_libcxxabi_libunwind_tests variant)
@@ -848,22 +1402,38 @@ endfunction()
 function(make_config_cfg directory variant flags)
     # Create clang configuration files
     # https://clang.llvm.org/docs/UsersManual.html#configuration-files
-    set(crt0 "-lcrt0")
-    set(extra_args "")
-    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}.cfg)
-    set(crt0 "-lcrt0-semihost")
-    set(extra_args "\n-lsemihost")
-    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg)
+    if(ESP_TOOLCHAIN)
+        set(crt0 "<CFGDIR>/../${directory}/lib/crt0.o")
+        set(extra_args "")
+        configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}.cfg)
+        set(extra_args "\n-lsemihost")
+        configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg)
+        set(crt0 "<CFGDIR>/../${directory}/lib/crt1-sim.o")
+        set(extra_args "\n-Wl,-lpthread_stubs,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive")
+        configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg)
+    else()
+        set(crt0 "-lcrt0")
+        set(extra_args "")
+        configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}.cfg)
+        set(crt0 "-lcrt0-semihost")
+        set(extra_args "\n-lsemihost")
+        configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg)
+    endif()
     install(FILES
         ${LLVM_BINARY_DIR}/bin/${variant}.cfg
         ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg
+        ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg
         DESTINATION bin
         COMPONENT llvm-toolchain-config-files
     )
 endfunction()
 
 function(get_compiler_rt_target_triple target_arch flags)
-    if(target_arch STREQUAL "aarch64")
+    if(target_arch MATCHES "^rv32")
+        set(target_triple "riscv32-esp-elf")
+    elseif(target_arch MATCHES "esp32")
+        set(target_triple "xtensa-esp-elf")
+    elseif(target_arch STREQUAL "aarch64")
         set(target_triple "aarch64-none-elf")
     else()
         # Choose the target triple so that compiler-rt will do the
@@ -907,16 +1477,47 @@ function(add_library_variant target_arch)
         set(variant "${target_arch}")
     endif()
 
+    if(USE_LIBC STREQUAL "none" AND USE_RTLIB STREQUAL "" AND USE_LIBCXX STREQUAL "")
+        message("Disabling library variant ${variant} (none of the libs enabled for building)")
+        return()
+    endif()
+
     if(LLVM_TOOLCHAIN_LIBRARY_VARIANTS)
         if(NOT enable_${variant})
             message("Disabling library variant ${variant}")
             return()
-        else()
-            message("Enabling library variant ${variant}")
+        endif()
+    elseif(variant MATCHES "^arm" OR variant MATCHES "^aarch64")
+        if(NOT LLVM_TOOLCHAIN_ENABLE_ARM)
+            message("Disabling library variant ${variant} (ARM is disabled)")
+            return()
+        endif()
+    elseif(variant MATCHES "^rv32")
+        if(NOT LLVM_TOOLCHAIN_ENABLE_RISCV)
+            message("Disabling library variant ${variant} (RISCV is disabled)")
+            return()
+        endif()
+    elseif(variant MATCHES "^esp32")
+        if(NOT LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            message("Disabling library variant ${variant} (XTENSA is disabled)")
+            return()
         endif()
     endif()
-
-    if(target_arch STREQUAL "aarch64")
+    message("Enabling library variant ${variant}")
+    
+    if(target_arch MATCHES "^rv32")
+        if(ESP_TOOLCHAIN)
+            set(parent_dir_name riscv32-esp-unknown-elf)
+        else()
+            set(parent_dir_name riscv32-unknown-elf)
+        endif()
+    elseif(target_arch MATCHES "^esp32")
+        if(ESP_TOOLCHAIN)
+            set(parent_dir_name xtensa-esp-unknown-elf)
+        else()
+            set(parent_dir_name xtensa-unknown-elf)
+        endif()
+    elseif(target_arch STREQUAL "aarch64")
         set(parent_dir_name aarch64-none-elf)
     else()
         set(parent_dir_name arm-none-eabi)
@@ -929,37 +1530,88 @@ function(add_library_variant target_arch)
     make_config_cfg("${directory}" "${variant}" "${VARIANT_COMPILE_FLAGS}")
     get_test_executor("${target_triple}" "${VARIANT_QEMU_MACHINE}" "${VARIANT_QEMU_CPU}" "${VARIANT_QEMU_PARAMS}")
     if(NOT PREBUILT_TARGET_LIBRARIES)
-        add_picolibc(
-            "${directory}"
-            "${variant}"
-            "${target_triple}"
-            "${VARIANT_COMPILE_FLAGS}"
-            "${test_executor}"
-        )
-        add_compiler_rt(
-            "${directory}"
-            "${variant}"
-            "${target_triple}"
-            "${VARIANT_COMPILE_FLAGS}"
-            "${test_executor}"
-            "picolibc_${variant}"
-        )
-        add_libcxx_libcxxabi_libunwind(
-            "${directory}"
-            "${variant}"
-            "${target_triple}"
-            "${VARIANT_COMPILE_FLAGS}"
-            "${test_executor}"
-            "picolibc_${variant}"
-            "${picolibc_specific_runtimes_options}"
-        )
+        if(USE_LIBC STREQUAL "picolibc")
+            add_picolibc(
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+                "${VARIANT_COMPILE_FLAGS}"
+                "${test_executor}"
+            )
+            set(libc_target "picolibc_${variant}")
+            set(libc_specific_runtimes_options "${picolibc_specific_runtimes_options}")
+            set(runtimes_compile_flags "${VARIANT_COMPILE_FLAGS}")
+        elseif(USE_LIBC STREQUAL "newlib")
+            add_newlib(
+                "${directory}"
+                "${variant}"
+                "${host_triple}"
+                "${target_triple}"
+                "${VARIANT_COMPILE_FLAGS}"
+                "${test_executor}"
+            )
+            set(libc_target "newlib_${variant}")
+            set(libc_specific_runtimes_options "${newlib_specific_runtimes_options}")
+            set(runtimes_compile_flags "${VARIANT_COMPILE_FLAGS} -D_GNU_SOURCE")
+            if(ESP_TOOLCHAIN)
+                add_newlib(
+                    "${directory}_nano"
+                    "${variant}_nano"
+                    "${host_triple}"
+                    "${target_triple}"
+                    "${VARIANT_COMPILE_FLAGS}"
+                    "${test_executor}"
+                )
+            endif()
+        endif()
+        if("compiler-rt" IN_LIST USE_RTLIB)
+            add_compiler_rt(
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+                "${VARIANT_COMPILE_FLAGS}"
+                "${test_executor}"
+                "${libc_target}"
+            )
+        endif()
+        if("libgcc" IN_LIST USE_RTLIB)
+            add_libgcc(
+                ${ESP_GNU_TOOLCHAIN_VER} 
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+            )
+        endif()
+        if("libcxx" IN_LIST USE_LIBCXX)
+            add_libcxx_libcxxabi_libunwind(
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+                "${runtimes_compile_flags}"
+                "${test_executor}"
+                "${libc_target}"
+                "${libc_specific_runtimes_options}"
+            )
+        endif()
+        if("libstdcxx" IN_LIST USE_LIBCXX)
+            add_libstdcxx(
+                ${ESP_GNU_TOOLCHAIN_VER} 
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+            )
+        endif()
         if(VARIANT_COMPILE_FLAGS MATCHES "-march=armv8")
             message("C++ runtime libraries tests disabled for ${variant}")
         else()
             add_custom_target(check-llvm-toolchain-runtimes-${variant})
             add_dependencies(check-llvm-toolchain-runtimes check-llvm-toolchain-runtimes-${variant})
-            add_compiler_rt_tests("${variant}")
-            add_libcxx_libcxxabi_libunwind_tests("${variant}")
+            if("compiler-rt" IN_LIST USE_RTLIB)
+                add_compiler_rt_tests("${variant}" "${target_triple}")
+            endif()
+            if("libcxx" IN_LIST USE_LIBCXX)
+                add_libcxx_libcxxabi_libunwind_tests("${variant}")
+            endif()
         endif()
     endif()
 
@@ -1084,16 +1736,6 @@ add_library_variant(
     QEMU_CPU "cortex-m55"
 )
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/multilib.yaml.in
-    ${CMAKE_CURRENT_BINARY_DIR}/llvm/${TARGET_LIBRARIES_DIR}/multilib.yaml
-    @ONLY
-)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/llvm/${TARGET_LIBRARIES_DIR}/multilib.yaml
-    DESTINATION ${TARGET_LIBRARIES_DIR}
-    COMPONENT llvm-toolchain-libs
-)
 
 install(
     FILES CHANGELOG.md LICENSE.txt README.md
@@ -1128,9 +1770,20 @@ set(third_party_license_files
     ${llvmproject_SOURCE_DIR}/libcxx/LICENSE.TXT        LIBCXX-LICENSE.txt
     ${llvmproject_SOURCE_DIR}/libcxxabi/LICENSE.TXT     LIBCXXABI-LICENSE.txt
     ${llvmproject_SOURCE_DIR}/libunwind/LICENSE.TXT     LIBUNWIND-LICENSE.txt
-    ${picolibc_SOURCE_DIR}/COPYING.NEWLIB               COPYING.NEWLIB
-    ${picolibc_SOURCE_DIR}/COPYING.picolibc             COPYING.picolibc
 )
+if(USE_LIBC STREQUAL "newlib")
+    list(APPEND third_party_license_files
+        ${newlib_SOURCE_DIR}/COPYING.NEWLIB                 COPYING.NEWLIB
+        ${newlib_SOURCE_DIR}/COPYING.LIBGLOSS               COPYING.LIBGLOSS
+        ${newlib_SOURCE_DIR}/COPYING.LIB                    COPYING.LIB
+        ${newlib_SOURCE_DIR}/COPYING3.LIB                   COPYING3.LIB
+    )
+elseif(USE_LIBC STREQUAL "picolibc")
+    list(APPEND third_party_license_files
+        ${picolibc_SOURCE_DIR}/COPYING.NEWLIB               COPYING.NEWLIB
+        ${picolibc_SOURCE_DIR}/COPYING.picolibc             COPYING.picolibc
+    )
+endif()
 while(third_party_license_files)
     list(POP_FRONT third_party_license_files source_file destination_name)
     install(
@@ -1161,11 +1814,16 @@ install(
 add_custom_target(
     install-llvm-toolchain
 )
-set(LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS_ALL ${LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS})
+
+add_custom_target(
+    install-llvm-standalone-libs
+)
+
+set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS_ALL ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS})
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
-    list(APPEND LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS_ALL llvm-toolchain-mingw)
+    list(APPEND LLVM_EXTRA_DISTRIBUTION_COMPONENTS_ALL llvm-toolchain-mingw)
 endif()
-foreach(component ${LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS})
+foreach(component ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS})
     add_custom_target(
         install-${component}
         COMMAND
@@ -1185,41 +1843,123 @@ foreach(component ${LLVM_TOOLCHAIN_DISTRIBUTION_COMPONENTS})
 endforeach()
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
     # No further action needed to install because the LLVM distributables
-    # are copied as part of the llvm-toolchain-mingw component.
+    # are copied as part of the llvm-toolchain-mingw component in add_llvm_mingw().
+
+    # For MinGW install-llvm-standalone-libs is defined in add_llvm_mingw().
 else()
     # Also run install-distribution to install the LLVM
     # binaries.
     add_dependencies(
         install-llvm-toolchain
-        install-distribution
+        install-toolchain-distribution
+    )
+    add_dependencies(
+        install-llvm-standalone-libs
+        install-libraries-distribution
+        install-llvm-toolchain-third-party-licenses
     )
 endif()
 
 
-# package-llvm-toolchain - target to create package
-if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW OR WIN32)
-    set(cpack_generator ZIP)
-    set(package_filename_extension ".zip")
+if(ESP_TOOLCHAIN)       
+    set(cpack_generator TXZ)
+    set(package_filename_extension ".tar.xz")
+    # CPack does not support alternating archive top dir name. It is fixed to CPACK_PACKAGE_FILE_NAME.
+    # See https://gitlab.kitware.com/cmake/cmake/-/issues/22946.
+    # So to have the same top dir name in archives for every supported platform we configure CPack 
+    # to generate archive ${CPACK_PACKAGE_NAME}.tar.xz with ${CPACK_PACKAGE_NAME} as top dir in it. 
+    # After that we rename it using ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME} format.
+    set(binary_package_name ${CPACK_PACKAGE_NAME}-${ESP_TOOLCHAIN_VER}-${CPACK_SYSTEM_NAME})
+    set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
+    set(pack_top_dir ${CPACK_PACKAGE_NAME})
+    set(cpack_generated_filepath ${CPACK_PACKAGE_NAME}${package_filename_extension})
+    add_custom_target(
+        print-llvm-toolchain-package-path
+        COMMAND "${CMAKE_COMMAND}" -E echo "${package_filepath}"
+    )
+    add_custom_command(
+        OUTPUT ${package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${cpack_generated_filepath} ${package_filepath}
+        COMMAND cpack -G ${cpack_generator}
+        COMMAND "${CMAKE_COMMAND}" -E rename ${cpack_generated_filepath} ${package_filepath}
+        DEPENDS llvm-toolchain
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    # Tried to use CPackComponent to pack archives based on components lists for different distributions.
+    # But LLVM build system leads to including all static libraries into archive. Currently we prepare libs distros manually.
+    # TODO: investigate and fix it to use CPackComponent instead.
+    set(standalone_libs_package_filepath ${CMAKE_BINARY_DIR}/libs-${binary_package_name}${package_filename_extension})
+    add_custom_target(
+        package-llvm-standalone-libs
+        COMMAND "${CMAKE_COMMAND}" -E echo "Pack standalone libs ${CMAKE_INSTALL_PREFIX} to ${standalone_libs_package_filepath}"
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        # CMake copy commands follow symlinks, so in order to copy symlinks for Linux distros we use 'cp' command here.
+        # As far as this script is run on Linux only it is safe.
+        # For Windows distros symlinks->binaries conversion is handled during installation, so it is ok to use 'cp' command here.
+        # NOTE: remove CMAKE_INSTALL_PREFIX to avoid conflicts with package-llvm-toolchain-target-libs which needs
+        # install-llvm-toolchain
+        COMMAND mv ${CMAKE_INSTALL_PREFIX} ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${standalone_libs_package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E tar cJf ${standalone_libs_package_filepath} ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        DEPENDS install-llvm-standalone-libs
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    add_custom_target(
+        print-llvm-standalone-libs-package-path
+        COMMAND "${CMAKE_COMMAND}" -E echo "${standalone_libs_package_filepath}"
+    )
+    set(target_libs_package_filepath ${CMAKE_BINARY_DIR}/target-libs-${binary_package_name}${package_filename_extension})
+    add_custom_target(
+        package-llvm-toolchain-target-libs
+        COMMAND "${CMAKE_COMMAND}" -E echo "Pack target libs ${CMAKE_INSTALL_PREFIX}/${TARGET_LIBRARIES_DIR} to ${target_libs_package_filepath}"
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E make_directory ${pack_top_dir}/lib
+        # CMake copy commands follow symlinks, so in order to copy symlinks for Linux distros we use 'cp' command here.
+        # As far as this script is run on Linux only it is safe.
+        # For Windows distros symlinks->binaries conversion is handled during installation, so it is ok to use 'cp' command here.
+        COMMAND cp -r ${CMAKE_INSTALL_PREFIX}/${TARGET_LIBRARIES_DIR} ${pack_top_dir}/lib/
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${target_libs_package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E tar cJf ${target_libs_package_filepath} ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        # NOTE: remove CMAKE_INSTALL_PREFIX to avoid conflicts with package-llvm-standalone-libs which needs
+        # install-llvm-standalone-libs
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${CMAKE_INSTALL_PREFIX}
+        DEPENDS install-llvm-toolchain
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    add_custom_target(
+        print-llvm-toolchain-target-libs-package-path
+        COMMAND "${CMAKE_COMMAND}" -E echo "${target_libs_package_filepath}"
+    )
 else()
-    set(cpack_generator TGZ)
-    set(package_filename_extension ".tar.gz")
+    if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW OR WIN32)
+        set(cpack_generator ZIP)
+        set(package_filename_extension ".zip")
+    else()
+        set(cpack_generator TXZ)
+        set(package_filename_extension ".tar.xz")
+    endif()
+    set(binary_package_name ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME})
+    set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
+    add_custom_command(
+        OUTPUT ${package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${package_filepath}
+        COMMAND cpack -G ${cpack_generator}
+        DEPENDS llvm-toolchain
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
 endif()
-# CPACK_PACKAGE_FILE_NAME may refer to the source package so use this variable instead.
-set(binary_package_name ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME})
-set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
-set(unpack_directory ${CMAKE_CURRENT_BINARY_DIR}/unpack/${binary_package_name})
-add_custom_command(
-    OUTPUT ${package_filepath}
-    COMMAND "${CMAKE_COMMAND}" -E rm -f ${package_filepath}
-    COMMAND cpack -G ${cpack_generator}
-    DEPENDS llvm-toolchain
-    USES_TERMINAL
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
+# package-llvm-toolchain - target to create package
 add_custom_target(
     package-llvm-toolchain
     DEPENDS ${package_filepath}
 )
+set(unpack_directory ${CMAKE_CURRENT_BINARY_DIR}/unpack/${binary_package_name})
 add_custom_target(
     clear-unpack-directory
     COMMAND "${CMAKE_COMMAND}" -E rm -rf unpack
@@ -1239,25 +1979,37 @@ add_dependencies(
 
 
 add_custom_target(check-llvm-toolchain)
-add_dependencies(check-llvm-toolchain check-picolibc)
+if(USE_LIBC STREQUAL "picolibc")
+    add_dependencies(check-llvm-toolchain check-picolibc)
+elseif(USE_LIBC STREQUAL "newlib")
+    # TODO: add newlib tests support
+    # add_dependencies(check-llvm-toolchain check-newlib)
+endif()
 add_dependencies(check-llvm-toolchain check-compiler-rt)
 add_subdirectory(test)
 add_dependencies(check-llvm-toolchain check-llvm-toolchain-lit)
 add_subdirectory(packagetest)
 
-if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
-    find_program(MINGW_C_EXECUTABLE x86_64-w64-mingw32-gcc-posix REQUIRED)
-    find_program(MINGW_CXX_EXECUTABLE x86_64-w64-mingw32-g++-posix REQUIRED)
-    cmake_path(SET MINGW_SYSROOT NORMALIZE "${MINGW_C_EXECUTABLE}/../../x86_64-w64-mingw32")
+function(
+    add_llvm_mingw
+    distro_name
+    distro_comps
+)
+    if(${distro_name} STREQUAL "standalone-libs")
+        set(dylib_enab ON)
+    else()
+        set(dylib_enab OFF)
+    endif()
 
     string(REPLACE ";" "," LLVM_ENABLE_PROJECTS_comma "${LLVM_ENABLE_PROJECTS}")
-    string(REPLACE ";" "," LLVM_DISTRIBUTION_COMPONENTS_comma "${LLVM_DISTRIBUTION_COMPONENTS}")
+    string(REPLACE ";" "," LLVM_DISTRIBUTION_COMPONENTS_comma "${distro_comps}")
     string(REPLACE ";" "," LLVM_TARGETS_TO_BUILD_comma "${LLVM_TARGETS_TO_BUILD}")
+    string(REPLACE ";" "," LLVM_EXPERIMENTAL_TARGETS_TO_BUILD_comma "${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}")
     ExternalProject_Add(
-        mingw-llvm
+        mingw-llvm_${distro_name}
         SOURCE_DIR ${llvmproject_SOURCE_DIR}/llvm
-        PREFIX mingw-llvm
-        INSTALL_DIR mingw-llvm/install
+        PREFIX mingw-llvm_${distro_name}
+        INSTALL_DIR mingw-llvm_${distro_name}/install
         DEPENDS clang-tblgen llvm-config llvm-tblgen
         CMAKE_ARGS
         -DBUG_REPORT_URL=${BUG_REPORT_URL}
@@ -1265,18 +2017,26 @@ if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
         -DCMAKE_CROSSCOMPILING=ON
         -DCMAKE_C_COMPILER=${MINGW_C_EXECUTABLE}
         -DCMAKE_CXX_COMPILER=${MINGW_CXX_EXECUTABLE}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_FIND_ROOT_PATH=${MINGW_SYSROOT}
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_SYSTEM_NAME=Windows
+        -DLLVM_APPEND_VC_REV=${LLVM_APPEND_VC_REV}
+        -DCLANG_REPOSITORY_STRING=${CLANG_REPOSITORY_STRING}
         -DCLANG_TABLEGEN=${LLVM_BINARY_DIR}/bin/clang-tblgen${CMAKE_EXECUTABLE_SUFFIX}
         -DLLVM_CMAKE_DIR=${LLVM_BINARY_DIR}/lib/cmake/llvm
         -DLLVM_DISTRIBUTION_COMPONENTS=${LLVM_DISTRIBUTION_COMPONENTS_comma}
+        -DLLVM_DEFAULT_TARGET_TRIPLE=${LLVM_DEFAULT_TARGET_TRIPLE}
+        -DLLVM_LINK_LLVM_DYLIB=${dylib_enab}
+        -DCLANG_LINK_CLANG_DYLIB=${dylib_enab}
         -DLLVM_ENABLE_PROJECTS=${LLVM_ENABLE_PROJECTS_comma}
         -DLLVM_TABLEGEN=${LLVM_BINARY_DIR}/bin/llvm-tblgen${CMAKE_EXECUTABLE_SUFFIX}
         -DLLVM_TARGETS_TO_BUILD=${LLVM_TARGETS_TO_BUILD_comma}
+        -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD_comma}
         BUILD_COMMAND "" # Let the install command build whatever it needs
         INSTALL_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --target install-distribution
         USES_TERMINAL_CONFIGURE TRUE
@@ -1287,23 +2047,26 @@ if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
         BUILD_ALWAYS TRUE
         CONFIGURE_HANDLED_BY_BUILD TRUE
     )
-    ExternalProject_Get_Property(mingw-llvm INSTALL_DIR)
-    # Handle symlinks such as clang++.
-    # CPack supports putting symlinks in zip files but to Windows they
-    # just look like a file containing text like "clang".
-    # Convert the required symlinks to regular files and remove the
-    # remaining ones.
-    add_custom_command(
-        TARGET mingw-llvm
-        POST_BUILD
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/handle-windows-symlinks.sh
-        WORKING_DIRECTORY ${INSTALL_DIR}
-    )
+    ExternalProject_Get_Property(mingw-llvm_${distro_name} INSTALL_DIR)
+
+    if(NOT dylib_enab)
+        # Handle symlinks such as clang++.
+        # CPack supports putting symlinks in zip files but to Windows they
+        # just look like a file containing text like "clang".
+        # Convert the required symlinks to regular files and remove the
+        # remaining ones.
+        add_custom_command(
+            TARGET mingw-llvm_${distro_name}
+            POST_BUILD
+            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/handle-windows-symlinks.sh
+            WORKING_DIRECTORY ${INSTALL_DIR}
+        )
+    endif()
 
     install(
         DIRECTORY ${INSTALL_DIR}/
         DESTINATION .
-        COMPONENT llvm-toolchain-mingw
+        COMPONENT llvm-${distro_name}-mingw
     )
 
     # Copy MinGW licenses
@@ -1328,12 +2091,86 @@ if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
         install(
             FILES ${mingw_runtime_dll}
             TYPE BIN
-            COMPONENT llvm-toolchain-mingw
+            COMPONENT llvm-${distro_name}-mingw
         )
     endforeach()
 
-    add_dependencies(
-        llvm-toolchain
-        mingw-llvm
+    if(dylib_enab)
+        add_dependencies(
+            llvm-standalone-libs
+            mingw-llvm_${distro_name}
+        )
+        add_dependencies(
+            install-llvm-${distro_name}
+            install-llvm-toolchain-third-party-licenses
+        )
+    else()
+        add_dependencies(
+            llvm-toolchain
+            mingw-llvm_${distro_name}
+        )
+    endif()
+
+    add_custom_target(
+        install-llvm-${distro_name}-mingw
+        COMMAND
+            "${CMAKE_COMMAND}"
+            --install ${CMAKE_BINARY_DIR}
+            --component llvm-${distro_name}-mingw
+        USES_TERMINAL
     )
+    add_dependencies(
+        install-llvm-${distro_name}-mingw
+        mingw-llvm_${distro_name}
+    )
+    add_dependencies(
+        install-llvm-${distro_name}
+        install-llvm-${distro_name}-mingw
+    )
+endfunction()
+
+if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
+    find_program(MINGW_C_EXECUTABLE x86_64-w64-mingw32-gcc-posix REQUIRED)
+    find_program(MINGW_CXX_EXECUTABLE x86_64-w64-mingw32-g++-posix REQUIRED)
+    cmake_path(SET MINGW_SYSROOT NORMALIZE "${MINGW_C_EXECUTABLE}/../../x86_64-w64-mingw32")
+
+    add_llvm_mingw(toolchain "${LLVM_Toolchain_DISTRIBUTION_COMPONENTS}")
+    add_llvm_mingw(standalone-libs "${LLVM_Libraries_DISTRIBUTION_COMPONENTS}")
 endif()
+
+if(ESP_TOOLCHAIN)
+    if("libstdcxx" IN_LIST USE_LIBCXX)
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            add_libstdcxx_common_headers("riscv32-esp-elf")
+        endif()
+        if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            add_libstdcxx_common_headers("xtensa-esp-elf")
+        endif()
+    endif()
+    if(USE_BINUTILS)
+        # add_binutils() needs to be caled before add_library_variant()
+        # because add_newlib() uses targets defined in add_binutils() as deps
+        if(LLVM_TOOLCHAIN_ENABLE_RISCV)
+            add_binutils("riscv32-esp-elf")
+        endif()
+        if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
+            add_binutils("xtensa-esp32-elf")
+            add_binutils("xtensa-esp32s2-elf")
+            add_binutils("xtensa-esp32s3-elf")
+        endif()
+    endif()
+    # should be included before configure_file(multilib.yaml.in)
+    # in order to include variants defined in this file
+    include(cmake/esp-lib-variants.cmake)
+endif()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/multilib.yaml.in
+    ${CMAKE_CURRENT_BINARY_DIR}/llvm/${TARGET_LIBRARIES_DIR}/multilib.yaml
+    @ONLY
+)
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/llvm/${TARGET_LIBRARIES_DIR}/multilib.yaml
+    DESTINATION ${TARGET_LIBRARIES_DIR}
+    COMPONENT llvm-toolchain-libs
+)

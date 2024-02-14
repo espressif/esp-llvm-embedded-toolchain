@@ -9,11 +9,23 @@
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
       "tagType": "branch",
-      "tag": "main"
+      "tag": "xtensa_release_17.0.1"
     },
     "picolibc": {
       "tagType": "branch",
       "tag": "main"
+    },
+    "newlib-esp32": {
+      "tagType": "branch",
+      "tag": "esp-4.1.0-clang-dev"
+    },
+    "binutils-gdb": {
+      "tagType": "tag",
+      "tag": "esp-2.41.0_20230928"
+    },
+    "xtensa-overlays": {
+      "tagType": "tag",
+      "tag": "master"
     }
   }
 }
