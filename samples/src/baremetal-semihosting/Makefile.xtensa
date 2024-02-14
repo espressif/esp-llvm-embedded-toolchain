@@ -1,0 +1,17 @@
+include ../../Makefile.conf
+
+build: hello.elf
+
+hello.elf: *.c
+	$(BIN_PATH)/clang --config esp32_no-rtti_qemu_semihost.cfg --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack -g -o hello.elf $^
+
+run: hello.elf
+	qemu-system-xtensa -nographic -machine esp32 --semihosting -kernel $<
+
+debug: hello.elf
+	qemu-system-xtensa -g 1234 -nographic -machine esp32 --semihosting -kernel $<
+
+clean:
+	rm -f *.elf
+
+.PHONY: clean run debug

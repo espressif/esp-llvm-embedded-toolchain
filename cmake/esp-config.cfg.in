@@ -1,0 +1,3 @@
+${flags}
+--sysroot <CFGDIR>/../${sysroot_dir}
+${crt0}${extra_args}

@@ -1,0 +1,3 @@
+# RUN: %S/run_gcc_torture_tests.py %S/gcc_tests -p %unpack_directory -t %t 2>&1 | FileCheck %s
+
+# CHECK: Tests passed!

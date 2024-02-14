@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: make -C %samples_dir/src/cpp-baremetal-semihosting-prof clean
 # RUN: make -C %samples_dir/src/cpp-baremetal-semihosting-prof run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s
 # RUN: make -C %samples_dir/src/cpp-baremetal-semihosting-prof clean

@@ -1,6 +1,6 @@
 {
   "comment": [
-    "Release branches of LLVM Embedded Toolchain for Arm will use",
+    "Release branches of Espressif LLVM Embedded Toolchain will use",
     "specific revisions of the repos it depends on. This file provides",
     "a single source of truth for which revisions to use that can be",
     "queried by CMake and other automation software."
@@ -8,8 +8,8 @@
   "repos": {
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
-      "tagType": "tag",
-      "tag": "llvmorg-19.1.5"
+      "tagType": "branch",
+      "tag": "xtensa_release_18.1.2"
     },
     "picolibc": {
       "tagType": "commithash",
@@ -17,7 +17,15 @@
     },
     "newlib": {
       "tagType": "tag",
-      "tag": "newlib-4.1.0"
+      "tag": "esp-4.3.0_20240322"
+    },
+    "binutils-gdb": {
+      "tagType": "tag",
+      "tag": "esp-2.41.0_20240305"
+    },
+    "xtensa-overlays": {
+      "tagType": "branch",
+      "tag": "master"
     }
   }
 }

@@ -1,6 +1,8 @@
-LLVM Embedded Toolchain for Arm ${LLVMEmbeddedToolchainForArm_VERSION}
+Espressif LLVM Embedded Toolchain ${EspLLVMEmbeddedToolchain_VERSION}
 
 Sources:
-* LLVM Embedded Toolchain for Arm: https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm (commit ${LLVMEmbeddedToolchainForArm_COMMIT})
+* Espressif LLVM Embedded Toolchain: https://github.com/espressif/esp-llvm-embedded-toolchain.git  (commit ${EspLLVMEmbeddedToolchain_COMMIT})
 * LLVM: https://github.com/llvm/llvm-project.git (commit ${llvmproject_COMMIT})
 * Picolibc: https://github.com/picolibc/picolibc.git (commit ${picolibc_COMMIT})
+* Newlib: https://github.com/espressif/newlib-esp32.git (commit ${newlib_COMMIT})
+* Binutils: https://github.com/espressif/binutils-gdb.git (commit ${binutils_COMMIT})

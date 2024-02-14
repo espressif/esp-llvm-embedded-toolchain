@@ -1,0 +1,18 @@
+include ../../Makefile.conf
+
+build: hello.elf
+
+# TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
+hello.elf: *.cpp
+	$(BIN_PATH)/clang++ --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc -g -o hello.elf $^
+
+run: hello.elf
+	qemu-riscv32 -cpu rv32 $<
+
+debug: hello.elf
+	qemu-riscv32 -cpu rv32 -g 1234 $<
+
+clean:
+	rm -f *.elf
+
+.PHONY: clean run debug
