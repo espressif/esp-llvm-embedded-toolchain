@@ -23,12 +23,22 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
 )
-execute_process(
-    COMMAND git -C ${picolibc_SOURCE_DIR} rev-parse HEAD
-    OUTPUT_VARIABLE picolibc_COMMIT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    COMMAND_ERROR_IS_FATAL ANY
-)
+if(NOT "${picolibc_SOURCE_DIR}" STREQUAL "")
+    execute_process(
+        COMMAND git -C ${picolibc_SOURCE_DIR} rev-parse HEAD
+        OUTPUT_VARIABLE picolibc_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endif()
+if(NOT "${newlib_SOURCE_DIR}" STREQUAL "")
+    execute_process(
+        COMMAND git -C ${newlib_SOURCE_DIR} rev-parse HEAD
+        OUTPUT_VARIABLE newlib_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endif()
 
 configure_file(
     ${CMAKE_CURRENT_LIST_DIR}/VERSION.txt.in

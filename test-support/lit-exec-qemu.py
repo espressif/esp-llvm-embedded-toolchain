@@ -14,30 +14,38 @@ import pathlib
 
 def run(args):
     """Execute the program using QEMU and return the subprocess return code."""
-    qemu_params = ["-M", args.qemu_machine]
+    qemu_params = []
+    if args.qemu_machine != "riscv32":
+        qemu_params += ["-M", args.qemu_machine]
     if args.qemu_cpu:
         qemu_params += ["-cpu", args.qemu_cpu]
     if args.qemu_params:
         qemu_params += args.qemu_params.split(":")
 
-    # Setup semihosting with chardev bound to stdio.
-    # This is needed to test semihosting functionality in picolibc.
-    qemu_params += ["-chardev", "stdio,mux=on,id=stdio0"]
-    semihosting_config = ["enable=on", "chardev=stdio0"] + [
-        "arg=" + arg.replace(",", ",,") for arg in args.arguments
-    ]
-    qemu_params += ["-semihosting-config", ",".join(semihosting_config)]
+    # # Setup semihosting with chardev bound to stdio.
+    # # This is needed to test semihosting functionality in picolibc.
+    # qemu_params += ["-chardev", "stdio,mux=on,id=stdio0"]
+    # semihosting_config = ["enable=on", "chardev=stdio0"] + [
+    #     "arg=" + arg.replace(",", ",,") for arg in args.arguments
+    # ]
+    # qemu_params += ["-semihosting-config", ",".join(semihosting_config)]
+    if args.qemu_machine != "riscv32":
+        qemu_params += ["--semihosting"]
 
     # Disable features we don't need and which could slow down the test or
     # interfere with semihosting.
-    qemu_params += ["-monitor", "none", "-serial", "none", "-nographic"]
+    # qemu_params += ["-monitor", "none", "-serial", "none", "-nographic"]
+    if args.qemu_machine != "riscv32":
+        qemu_params += ["-nographic"]
 
     # Load the image to machine's memory and set the PC.
     # "virt" machine cannot be used with load, as QEMU will try to put
     # device tree blob at start of RAM conflicting with our code
     # https://www.qemu.org/docs/master/system/arm/virt.html#hardware-configuration-information-for-bare-metal-programming
-    if args.qemu_machine == "virt":
+    if args.qemu_machine == "virt" or args.qemu_machine == "esp32":
         qemu_params += ["-kernel", args.image]
+    elif args.qemu_machine == "riscv32":
+        qemu_params += [args.image]
     else:
         qemu_params += ["-device", f"loader,file={args.image},cpu-num=0"]
 
