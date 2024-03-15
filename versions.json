@@ -16,8 +16,8 @@
       "tag": "main"
     },
     "newlib-esp32": {
-      "tagType": "branch",
-      "tag": "esp-4.1.0-clang-dev"
+      "tagType": "tag",
+      "tag": "esp-4.3.0_20240322"
     },
     "binutils-gdb": {
       "tagType": "tag",

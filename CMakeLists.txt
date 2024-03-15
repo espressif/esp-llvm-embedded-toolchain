@@ -999,26 +999,25 @@ function(
             --with-newlib
             --disable-newlib-io-c99-formats
             --disable-newlib-supplied-syscalls --enable-newlib-nano-formatted-io
-            --enable-newlib-reent-small --enable-target-optspace
-            --enable-newlib-nano-malloc --enable-newlib-retargetable-locking
-            --disable-newlib_wide_orient
-            --enable-newlib-iconv 
+            --enable-newlib-reent-small
+            --enable-target-optspace --enable-newlib-nano-malloc
+            --enable-newlib-retargetable-locking --disable-newlib_wide_orient
+            --enable-newlib-iconv --enable-newlib-reent-binary-compat
         )
     else()
         list(APPEND config_opts
             --disable-multilib
-            --with-newlib
             --enable-newlib-io-float --disable-newlib-io-long-double
             --disable-newlib-supplied-syscalls --enable-newlib-io-pos-args
             --enable-newlib-io-c99-formats --enable-newlib-io-long-long
-            --disable-newlib-register-fini --disable-newlib-nano-malloc
+            --disable-newlib-register-fini --enable-newlib-nano-malloc
             --disable-newlib-nano-formatted-io --enable-newlib-atexit-dynamic-alloc
-            --disable-newlib-global-atexit --disable-lite-exit --enable-newlib-reent-small
-            --enable-newlib-multithread
+            --enable-newlib-global-atexit --disable-lite-exit --enable-newlib-reent-small
+            --enable-newlib-multithread --enable-newlib-retargetable-locking
             --disable-newlib-wide-orient --enable-newlib-fseek-optimization
             --enable-newlib-fvwrite-in-streamio --enable-newlib-unbuf-stream-opt
-            --enable-target-optspace --enable-newlib-retargetable-locking
-            --enable-newlib-iconv 
+            --enable-target-optspace
+            --enable-newlib-iconv --enable-newlib-reent-binary-compat
         )
     endif()
 
@@ -1026,18 +1025,10 @@ function(
 
     if(target_triple MATCHES "^riscv32")
         set(cpu generic-rv32)
-        set(newlib_target_triple ${target_triple})
+        set(binutils_target_triple ${target_triple})
     elseif(target_triple MATCHES "^xtensa-esp")
         get_xtensa_cpu(${variant} cpu)
-        get_xtensa_target_triple(${variant} newlib_target_triple)
-        # newlib sources are patched for every Xtensa CPU, 
-        # so create separate source dir for every CPU to avoid source conflicts when building in parallel
-        get_filename_component(newlib_src_dir ${newlib_SOURCE_DIR} NAME)
-        set(newlib_src_dir /tmp/${newlib_src_dir}_${newlib_target_triple})
-        message(STATUS "Make source dir copy for ${cpu}. ${newlib_SOURCE_DIR} -> ${newlib_src_dir}")
-        file(COPY ${newlib_SOURCE_DIR}/ DESTINATION ${newlib_src_dir})
-        message(STATUS "Apply Xtensa overlay for ${cpu}. ${xtensa_overlays_SOURCE_DIR}/xtensa_${cpu}/newlib -> ${newlib_src_dir}")
-        file(COPY ${xtensa_overlays_SOURCE_DIR}/xtensa_${cpu}/newlib/ DESTINATION ${newlib_src_dir})
+        get_legacy_xtensa_target_triple(${variant} binutils_target_triple)
     else()
         message(FATAL_ERROR "Unsupported target triple ${target_triple}")
     endif()
@@ -1074,7 +1065,7 @@ function(
             env RANLIB_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-ranlib${CMAKE_EXECUTABLE_SUFFIX}
             env READELF_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-readelf${CMAKE_EXECUTABLE_SUFFIX}
             env STRIP_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-strip${CMAKE_EXECUTABLE_SUFFIX}
-            ${newlib_src_dir}/configure --host=${host_triple} --target=${newlib_target_triple} --prefix=<INSTALL_DIR> ${config_opts}
+            ${newlib_src_dir}/configure --host=${host_triple} --target=${target_triple} --prefix=<INSTALL_DIR> ${config_opts}
         BUILD_COMMAND make -j${MAKE_JOBS_NUM}
         INSTALL_COMMAND make install
         USES_TERMINAL_CONFIGURE TRUE
@@ -1095,11 +1086,11 @@ function(
             newlib_${variant}
             post-install
             # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step <INSTALL_DIR>/${newlib_target_triple}/lib/lib{c,g,m} -> ${INSTALL_DIR}/nano"
+            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step <INSTALL_DIR>/${target_triple}/lib/lib{c,g,m} -> ${INSTALL_DIR}/nano"
             COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/lib/nano
-            COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/${newlib_target_triple}/lib/libc.a 
-                                             <INSTALL_DIR>/${newlib_target_triple}/lib/libm.a
-                                             <INSTALL_DIR>/${newlib_target_triple}/lib/libg.a
+            COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/${target_triple}/lib/libc.a
+                                             <INSTALL_DIR>/${target_triple}/lib/libm.a
+                                             <INSTALL_DIR>/${target_triple}/lib/libg.a
                                              ${INSTALL_DIR}/lib/nano/
             DEPENDEES install
             ALWAYS TRUE
@@ -1115,9 +1106,9 @@ function(
             newlib_${variant}
             post-install
             # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step ${INSTALL_DIR}/${newlib_target_triple}/* -> ${INSTALL_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different <INSTALL_DIR>/${newlib_target_triple} <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E rm -rf <INSTALL_DIR>/${newlib_target_triple}
+            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step ${INSTALL_DIR}/${target_triple}/* -> ${INSTALL_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different <INSTALL_DIR>/${target_triple} <INSTALL_DIR>
+            COMMAND ${CMAKE_COMMAND} -E rm -rf <INSTALL_DIR>/${target_triple}
             DEPENDEES install
             ALWAYS TRUE
             USES_TERMINAL TRUE
@@ -1134,10 +1125,10 @@ function(
     )
 
     if(ESP_TOOLCHAIN)
-        message(STATUS "Add dep newlib_${variant} -> binutils_${newlib_target_triple}")
+        message(STATUS "Add dep newlib_${variant} -> binutils_${binutils_target_triple}")
         add_dependencies(
             newlib_${variant}
-            binutils_${newlib_target_triple}
+            binutils_${binutils_target_triple}
         )
     endif()
 
@@ -1184,7 +1175,7 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg -ffreestanding")
         if(target_triple MATCHES "^riscv32-esp-elf")
         elseif(target_triple MATCHES "^xtensa-esp-elf")
-            get_xtensa_target_triple(${variant} xtensa_target_triple)
+            get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
             set(compiler_rt_test_flags "${compiler_rt_test_flags} -T memory.elf.ld -T app.elf.ld --ld-path=${xtensa_target_triple}-ld")
         else()
             message(FATAL_ERROR "compiler-rt+newlib tests are not supported for '${target_triple}' target!")
@@ -1367,7 +1358,7 @@ function(add_compiler_rt_tests variant target_triple)
     if(ESP_TOOLCHAIN)
         # need GNU LD to build tests
         if(target_triple MATCHES "^xtensa-esp-elf")
-            get_xtensa_target_triple(${variant} xtensa_target_triple)
+            get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
             add_dependencies(
                 check-compiler-rt-${variant}
                 binutils_${xtensa_target_triple}
@@ -1545,7 +1536,7 @@ function(add_library_variant target_arch)
             add_newlib(
                 "${directory}"
                 "${variant}"
-                "${host_triple}"
+                "${HOST_TRIPLE}"
                 "${target_triple}"
                 "${VARIANT_COMPILE_FLAGS}"
                 "${test_executor}"
@@ -1557,7 +1548,7 @@ function(add_library_variant target_arch)
                 add_newlib(
                     "${directory}_nano"
                     "${variant}_nano"
-                    "${host_triple}"
+                    "${HOST_TRIPLE}"
                     "${target_triple}"
                     "${VARIANT_COMPILE_FLAGS}"
                     "${test_executor}"

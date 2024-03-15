@@ -73,7 +73,7 @@ function(
 endfunction()
 
 function(
-    get_xtensa_target_triple
+    get_legacy_xtensa_target_triple
     variant
     target_triple_var
 )
@@ -89,10 +89,6 @@ function(
     variant
     target_triple
 )
-    # if(target_triple MATCHES "^xtensa-esp")
-    #     get_xtensa_target_triple(${variant} target_triple)
-    #     message(STATUS "target_triple2=${target_triple}")
-    # endif()
     parse_gnu_toolchain_ver(${gnu_toolchain_ver} gcc_ver date)
     get_gnu_variant(${variant} ${target_triple} gnu_variant)
     get_gnu_toolchain_src_dir(${target_triple} gnu_toolchain_src_dir)
@@ -125,9 +121,6 @@ function(
     variant
     target_triple
 )
-    # if(target_triple MATCHES "^xtensa-esp")
-    #     get_xtensa_target_triple(${variant} target_triple)
-    # endif()
     parse_gnu_toolchain_ver(${gnu_toolchain_ver} gcc_ver date)
     get_gnu_toolchain_src_dir(${target_triple} gnu_toolchain_src_dir)
     get_gnu_variant(${variant} ${target_triple} gnu_variant)
