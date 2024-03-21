@@ -21,7 +21,7 @@
     },
     "binutils-gdb": {
       "tagType": "tag",
-      "tag": "esp-2.41.0_20230928"
+      "tag": "esp-2.41.0_20240305"
     },
     "xtensa-overlays": {
       "tagType": "tag",
