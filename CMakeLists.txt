@@ -462,12 +462,12 @@ FetchContent_Declare(newlib
 # Currently ESP toolchain picks libgcc and libstdc++ libraries from GNU toolchain
 FetchContent_Declare(esp_riscv32_gnu_toolchain
     URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${ESP_GNU_TOOLCHAIN_VER}/riscv32-esp-elf-${ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
-    URL_HASH MD5=69bae22d7c7812853523824c426244f0
+    URL_HASH MD5=8f2c02098e6ceff0f7076d5c35d84418
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
 )
 FetchContent_Declare(esp_xtensa_gnu_toolchain
     URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${ESP_GNU_TOOLCHAIN_VER}/xtensa-esp-elf-${ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
-    URL_HASH MD5=02f40d68927fd0383912abde72fa7c02
+    URL_HASH MD5=fd79ffe2484dbe2a0b8ff8d096ad5a81
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
 )
 
