@@ -24,7 +24,7 @@
       "tag": "esp-2.41.0_20240305"
     },
     "xtensa-overlays": {
-      "tagType": "tag",
+      "tagType": "branch",
       "tag": "master"
     }
   }
