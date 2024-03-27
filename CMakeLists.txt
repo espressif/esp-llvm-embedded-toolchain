@@ -1176,7 +1176,7 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         if(target_triple MATCHES "^riscv32-esp-elf")
         elseif(target_triple MATCHES "^xtensa-esp-elf")
             get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
-            set(compiler_rt_test_flags "${compiler_rt_test_flags} -T memory.elf.ld -T app.elf.ld --ld-path=${xtensa_target_triple}-ld")
+            set(compiler_rt_test_flags "${compiler_rt_test_flags} -T memory.elf.ld -T app.elf.ld --ld-path=${xtensa_target_triple}-clang-ld")
         else()
             message(FATAL_ERROR "compiler-rt+newlib tests are not supported for '${target_triple}' target!")
         endif()

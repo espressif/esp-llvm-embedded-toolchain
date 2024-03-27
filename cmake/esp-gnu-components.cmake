@@ -245,7 +245,9 @@ function(
         CONFIGURE_COMMAND 
             env CC=${use_cc}
             env CXX=${use_cxx}
-            ${binutils_src_dir}/configure --host=${HOST_TRIPLE} --target=${target_triple} --prefix=<INSTALL_DIR> ${config_opts}
+            ${binutils_src_dir}/configure --host=${HOST_TRIPLE} --target=${target_triple} --prefix=<INSTALL_DIR>
+                --program-prefix=${target_triple}-clang-
+                ${config_opts}
         BUILD_COMMAND make -j${MAKE_JOBS_NUM}
         INSTALL_COMMAND make install-strip
         USES_TERMINAL_CONFIGURE TRUE
@@ -259,10 +261,10 @@ function(
 
     # install necessary programs only
     install(PROGRAMS
-        ${LLVM_BINARY_DIR}/bin/${target_triple}-objcopy${EXE_SUFFIX}
-        ${LLVM_BINARY_DIR}/bin/${target_triple}-as${EXE_SUFFIX}
-        ${LLVM_BINARY_DIR}/bin/${target_triple}-ld${EXE_SUFFIX}
-        ${LLVM_BINARY_DIR}/bin/${target_triple}-objdump${EXE_SUFFIX}
+        ${LLVM_BINARY_DIR}/bin/${target_triple}-clang-objcopy${EXE_SUFFIX}
+        ${LLVM_BINARY_DIR}/bin/${target_triple}-clang-as${EXE_SUFFIX}
+        ${LLVM_BINARY_DIR}/bin/${target_triple}-clang-ld${EXE_SUFFIX}
+        ${LLVM_BINARY_DIR}/bin/${target_triple}-clang-objdump${EXE_SUFFIX}
         TYPE BIN
         COMPONENT llvm-toolchain-gnu-binutils_${target_triple}
     )
