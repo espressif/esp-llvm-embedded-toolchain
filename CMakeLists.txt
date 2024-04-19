@@ -208,6 +208,7 @@ set(LLVM_Toolchain_DISTRIBUTION_COMPONENTS
     clang-resource-headers
     clang-tidy
     clang
+    clangd
     dsymutil
     llc
     lld
