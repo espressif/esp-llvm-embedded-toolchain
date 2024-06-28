@@ -540,7 +540,7 @@ if(ESP_TOOLCHAIN)
     if("${CLANG_REPOSITORY_STRING}" STREQUAL "")
         execute_process(
             COMMAND git remote get-url origin
-            WORKING_DIRECTORY ${FETCHCONTENT_SOURCE_DIR_LLVMPROJECT}
+            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
             OUTPUT_STRIP_TRAILING_WHITESPACE
             OUTPUT_VARIABLE result
             RESULT_VARIABLE ret
@@ -554,7 +554,7 @@ if(ESP_TOOLCHAIN)
     if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
         execute_process(
             COMMAND git describe --abbrev=7
-            WORKING_DIRECTORY ${FETCHCONTENT_SOURCE_DIR_LLVMPROJECT}
+            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
             OUTPUT_STRIP_TRAILING_WHITESPACE
             OUTPUT_VARIABLE result
             RESULT_VARIABLE ret
