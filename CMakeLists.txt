@@ -547,7 +547,7 @@ if(ESP_TOOLCHAIN)
         )
         if(NOT ret EQUAL 0)
             set(result "<unknown repo>")
-            message("This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
+            message(WARNING "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
         endif()
         set(CLANG_REPOSITORY_STRING "${result}")
     endif()
@@ -561,7 +561,7 @@ if(ESP_TOOLCHAIN)
         )
         if(NOT ret EQUAL 0)
             set(result "<unknown commit>")
-            message(STATUS "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
+            message(WARNING "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
         endif()
         set(ESP_TOOLCHAIN_VER "${result}")
     endif()
@@ -1036,7 +1036,7 @@ function(
 
     # Force using DWARF v4 because current version of GCC assembler does not support DWARF v5,
     # which is default for Clang 14.
-    # Clamg 15 has tighten the rules for '-Wimplicit-function-declaration' (https://reviews.llvm.org/rG7d644e1215b3)
+    # Clang 15 has tighten the rules for '-Wimplicit-function-declaration' (https://reviews.llvm.org/rG7d644e1215b3)
     # and '-Wint-conversion' (https://reviews.llvm.org/rG7068aa98412a)
     set(extra_cflags_for_target "-fdebug-default-version=4 -Wno-implicit-function-declaration -Wno-int-conversion")
     # avoid spurious "warning: argument unused during compilation: '-L/mnt/host/projects/esp/newlib-cygwin/libgloss/riscv32' [-Wunused-command-line-argument]""
