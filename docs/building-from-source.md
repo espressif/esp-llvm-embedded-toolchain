@@ -117,3 +117,169 @@ The same build directory can be used for both native and MinGW toolchains.
 ### LLVM:
 * Recognize $@ in a config file argument to mean the directory of the config
   file, allowing toolchain relative paths.
+
+## Espressif Toolchain Specifics
+
+Espressif exteneded original Cmake scripts with the following features:
+* Toolchain can be built for several target architectures. RISCV and Xtensa. See `LLVM_TOOLCHAIN_ENABLED_TARGETS`.
+* Toolchain can be built for several host architecures (x86_64/ARM/ARM64) and platforms (Linux, MacOS, Windows). See `HOST_TRIPLE`.
+* User can select whether and what C library should be included into toolchain: newlib or picolibc. See `USE_LIBC`. ***NOTE: Picolibc was not tested yet***.
+* User can select what run-time librarires should be included into toolchain: `compiler-rt` and/or `libgcc`. See `USE_RTLIB`. Currently pre-built `libgcc` binaries are picked up from the specified Espressif GNU toolchain release (see `ESP_GNU_TOOLCHAIN_VER`).
+* User can select what C++ librarires should be included into toolchain: `libstdc++` and/or `libcxx`. See `USE_LIBCXX`. Currently pre-built `libstdc++` binaries are picked up from the specified Espressif GNU toolchain release (see `ESP_GNU_TOOLCHAIN_VER`). ***NOTE: Building `libcxx` is not well tested yet***.
+* There exist some integration problems with esp-idf, so toolchain includes GNU `as`, `ld` and `objdump` to work around them. See `USE_BINUTILS`.
+
+### Configuration variables
+
+Variable name       | Description
+--------------------|-------------
+ESP_TOOLCHAIN | Enables options specific to Espressif toolchain build. `YES` or `NO`.
+HOST_TRIPLE | Host triple to build toolchain for. String.
+LLVM_TOOLCHAIN_ENABLED_TARGETS | Build only the specified targets. If not specified then build all targets. Semicolon separated list, e.g. `RISCV;Xtensa`.
+USE_LIBC | What libc to use for toolchain. One of `picolibc`, `newlib` or `none`. String.
+USE_RTLIB | What run time library to include into toolchain: `compiler-rt`, `libgcc`. Semicolon separated list.
+USE_LIBCXX | What C++ library to include into toolchain: `libcxx`, `libstdcxx`. Semicolon separated list.
+USE_BINUTILS | Includes GNU binutils into toolchain. `YES` or `NO`.
+ESP_GNU_TOOLCHAIN_VER | Espressif GNU toolchain version to pick libgcc and libstdc++ from. String.
+LLVM_PROJECT_REPO_URL | llvm-project repo URL. String. Default `https://github.com/espressif/llvm-project.git`
+NEWLIB_REPO_URL | Newlib repo URL. String. Default `https://github.com/espressif/newlib-esp32.git`
+BINUTILS_REPO_URL | Binutils repo URL. String. Default `https://github.com/espressif/binutils-gdb.git`
+XTENSA_OVERLAYS_REPO_URL | Xtensa overlays repo URL. String. Default `https://github.com/espressif/xtensa-overlays.git`
+
+### How to build
+
+#### Using remote repositories
+
+The process of building is very similar to ARM toolchain, but may need some additional configuration variables to be set. Below is an example of how to build complete toolchain for `x86_64-linux-gnu` host.
+
+```bash
+git clone -b esp-17.0.1_20240419 https://github.com/espressif/esp-llvm-embedded-toolchain.git
+
+cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
+        -DLLVMPROJECT_REPO_URL="https://github.com/espressif/llvm-project.git" \
+        -DNEWLIB_REPO_URL="https://github.com/espressif/newlib-esp32.git" \
+        -DBINUTILS_REPO_URL="https://github.com/espressif/binutils-gdb.git" \
+        -DXTENSA_OVERLAYS_REPO_URL="https://github.com/espressif/xtensa-overlays.git" \
+        -DFETCHCONTENT_QUIET=OFF \
+        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DCPACK_ARCHIVE_THREADS=0 \
+        -DUSE_LIBC=newlib \
+        -DUSE_LIBCXX="libstdcxx" \
+        -DUSE_RTLIB="compiler-rt;libgcc" \
+        -DUSE_BINUTILS=ON \
+        -DESP_TOOLCHAIN=ON \
+        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa" \
+        --install-prefix=/tmp/esp-clang_Release
+
+# install toolchain to /tmp/esp-clang_Release
+ninja install-llvm-toolchain
+
+# or package toolchain
+ninja package-llvm-toolchain
+# print path to packed toolchain
+ninja print-llvm-toolchain-package-path
+```
+URLs in the example above are default ones and can be skipped. They are shown just for the sake of example. You can customize them to point to you own fork of those projects. If you want to use custom branch or tag for any of the repo it should be set up in `versions.json`.
+
+#### Using local repositories
+
+If you want to build toolchain using repos/branches checked out locally the following commands can be used
+
+```bash
+cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
+        -DFETCHCONTENT_SOURCE_DIR_LLVMPROJECT=/home/user/llvm-project \
+        -DFETCHCONTENT_SOURCE_DIR_BINUTILS=/home/user/binutils-gdb \
+        -DFETCHCONTENT_SOURCE_DIR_NEWLIB=/home/user/newlib-cygwin \
+        -DFETCHCONTENT_SOURCE_DIR_XTENSA_OVERLAYS=/home/user/xtensa-overlays \
+        -DFETCHCONTENT_QUIET=OFF \
+        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DCPACK_ARCHIVE_THREADS=0 \
+        -DUSE_LIBC=newlib \
+        -DUSE_LIBCXX="libstdcxx" \
+        -DUSE_RTLIB="compiler-rt;libgcc" \
+        -DUSE_BINUTILS=ON \
+        -DESP_TOOLCHAIN=ON \
+        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa" \
+        --install-prefix=/tmp/esp-clang_Release
+
+# install toolchain to /tmp/esp-clang_Release
+ninja install-llvm-toolchain
+
+# or package toolchain
+ninja package-llvm-toolchain
+# print path to packed toolchain
+ninja print-llvm-toolchain-package-path
+```
+
+#### Target libraries
+
+If you want to build toolchain for the host other then `x86_64-linux-gnu` you need to build toolchain core and target libraries separately. Libraries should be built for `x86_64-linux-gnu` host and added to the toolchain manualy.
+
+```bash
+cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
+        -DFETCHCONTENT_QUIET=OFF \
+        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DCPACK_ARCHIVE_THREADS=0 \
+        -DUSE_LIBC=newlib \
+        -DUSE_LIBCXX="libstdcxx" \
+        -DUSE_RTLIB="compiler-rt;libgcc" \
+        -DUSE_BINUTILS=ON \
+        -DESP_TOOLCHAIN=ON \
+        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
+
+# package target libraries
+ninja package-llvm-toolchain-target-libs
+# print path to packed target librarires
+ninja print-llvm-toolchain-target-libs-package-path
+```
+
+#### For MacOS host
+
+To build for MacOS you need to install [OSXCROSS](https://github.com/tpoechtrager/osxcross) environment. The command to build toolchain for MacOS w/o target libraries is below.
+
+```bash
+cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
+        -DFETCHCONTENT_QUIET=OFF \
+        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DCPACK_ARCHIVE_THREADS=0 \
+        -DUSE_LIBC=none \
+        -DUSE_LIBCXX="" \
+        -DUSE_RTLIB="" \
+        -DUSE_BINUTILS=ON \
+        -DESP_TOOLCHAIN=ON \
+        -DHOST_TRIPLE=x86_64-apple-darwin21.1 \
+        -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
+
+# package toolchain
+ninja package-llvm-toolchain
+# print path to packed toolchain
+ninja print-llvm-toolchain-package-path
+```
+***NOTE: To get complete toolchain you need to add target libraries to the toolchain.***
+
+#### For Windows host
+
+To build for Windows you need to install Mingw. See `Cross-compiling the toolchain for Windows` chapter on how to do this. The command to build toolchain for Windows w/o target libraries is below.
+
+```bash
+cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
+        -DFETCHCONTENT_QUIET=OFF \
+        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DCPACK_ARCHIVE_THREADS=0 \
+        -DUSE_LIBC=none \
+        -DUSE_LIBCXX="" \
+        -DUSE_RTLIB="" \
+        -DUSE_BINUTILS=ON \
+        -DESP_TOOLCHAIN=ON \
+        -DLLVM_TOOLCHAIN_CROSS_BUILD_MINGW=ON \
+        -DHOST_TRIPLE=x86_64-w64-mingw32 \
+        -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
+
+# package toolchain
+ninja package-llvm-toolchain
+# print path to packed toolchain
+ninja print-llvm-toolchain-package-path
+```
+***NOTE: To get complete toolchain you need to add target libraries to the toolchain.***

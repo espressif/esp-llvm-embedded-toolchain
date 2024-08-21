@@ -9,7 +9,7 @@
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
       "tagType": "branch",
-      "tag": "xtensa_release_17.0.1"
+      "tag": "xtensa_release_18.1.2"
     },
     "picolibc": {
       "tagType": "branch",
