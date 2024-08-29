@@ -196,7 +196,11 @@ set(XTENSA_OVERLAYS_REPO_URL
     "Xtensa overlays repo URL."
 )
 
-set(BUG_REPORT_URL "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/issues" CACHE STRING "")
+if(ESP_TOOLCHAIN)
+    set(BUG_REPORT_URL "https://github.com/espressif/esp-llvm-embedded-toolchain/issues" CACHE STRING "")
+else()
+    set(BUG_REPORT_URL "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/issues" CACHE STRING "")
+endif()
 
 set(LLVM_DISTRIBUTIONS
     Toolchain
