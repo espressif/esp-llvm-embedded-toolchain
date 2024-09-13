@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: make -C %samples_dir/src/baremetal-uart clean
 # The sample never terminates so we can't run it here, but we can at
 # least make sure it builds.

@@ -1,5 +1,15 @@
-// RUN: %clangxx --config armv6m_soft_nofp_semihost.cfg -T %S/Inputs/microbit.ld %s -o %t.out
-// RUN: qemu-system-arm -M microbit -semihosting -nographic -device loader,file=%t.out 2>&1 | FileCheck %s
+// ESP_TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
+
+// RUN: %if target={{.*}}-esp-elf  \
+// RUN:   %{ \
+// RUN:     %clangxx --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc %s -o %t.out && \
+// RUN:     qemu-riscv32 -cpu rv32 %t.out 2>&1 | FileCheck %s \
+// RUN:   %} \
+// RUN: %else \
+// RUN:   %{ \
+// RUN:     %clangxx --config armv6m_soft_nofp_semihost.cfg -T %S/Inputs/microbit.ld %s -o %t.out && \
+// RUN:     qemu-system-arm -M microbit -semihosting -nographic -device loader,file=%t.out 2>&1 | FileCheck %s \
+// RUN:   %}
 
 // Include as many C++17 headers as possible.
 // Unsupported headers are commented out.
@@ -51,7 +61,7 @@
 #include <streambuf>
 #include <string>
 #include <string_view>
-#include <strstream>
+// #include <strstream>
 #include <system_error>
 //#include <thread>
 #include <tuple>
