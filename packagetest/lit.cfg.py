@@ -13,7 +13,7 @@ from lit.llvm.subst import FindTool, ToolSubst
 config.name = 'package'
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 config.suffixes = ['.c', '.cpp', '.test']
-config.excludes = ['CMakeLists.txt', 'README.md']
+config.excludes = ['CMakeLists.txt', 'README.md', 'gcc_tests']
 config.test_source_root = os.path.dirname(__file__)
 
 
