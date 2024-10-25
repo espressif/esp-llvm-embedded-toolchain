@@ -1177,11 +1177,11 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
     if(USE_LIBC STREQUAL "picolibc")
         set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg -T ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/test-support/ldscripts/picolibc_${variant}.ld")
     elseif(USE_LIBC STREQUAL "newlib")
-        set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg -ffreestanding")
+        set(compiler_rt_test_flags "--config ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg")
         if(target_triple MATCHES "^riscv32-esp-elf")
         elseif(target_triple MATCHES "^xtensa-esp-elf")
             get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
-            set(compiler_rt_test_flags "${compiler_rt_test_flags} -T memory.elf.ld -T app.elf.ld --ld-path=${xtensa_target_triple}-clang-ld")
+            set(compiler_rt_test_flags "${compiler_rt_test_flags} --ld-path=${xtensa_target_triple}-clang-ld")
         else()
             message(FATAL_ERROR "compiler-rt+newlib tests are not supported for '${target_triple}' target!")
         endif()
@@ -1395,17 +1395,20 @@ function(add_libcxx_libcxxabi_libunwind_tests variant)
     endforeach()
 endfunction()
 
-function(make_config_cfg directory variant flags)
+function(make_config_cfg target_triple sysroot_dir variant_dir variant flags)
     # Create clang configuration files
     # https://clang.llvm.org/docs/UsersManual.html#configuration-files
     if(ESP_TOOLCHAIN)
-        set(crt0 "<CFGDIR>/../${directory}/lib/crt0.o")
+        set(crt0 "<CFGDIR>/../${variant_dir}/lib/crt0.o")
         set(extra_args "")
         configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}.cfg)
         set(extra_args "\n-lsemihost")
         configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_semihost.cfg)
-        set(crt0 "<CFGDIR>/../${directory}/lib/crt1-sim.o")
-        set(extra_args "\n-Wl,-lpthread_stubs,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive")
+        set(crt0 "<CFGDIR>/../${variant_dir}/lib/crt1-sim.o")
+        set(extra_args "\n-nostartfiles\n-Wl,-lpthread_stubs,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive")
+        if(target_triple MATCHES "xtensa-esp-elf")
+            set(extra_args "${extra_args}\n-Tmemory.elf.ld -Tapp.elf.ld")
+        endif()
         configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/esp-config.cfg.in ${LLVM_BINARY_DIR}/bin/${variant}_qemu_semihost.cfg)
     else()
         set(crt0 "-lcrt0")
@@ -1523,7 +1526,7 @@ function(add_library_variant target_arch)
 
     set(directory "${TARGET_LIBRARIES_DIR}/${parent_dir_name}/${variant}")
     set(VARIANT_COMPILE_FLAGS "--target=${target_triple} ${VARIANT_COMPILE_FLAGS}")
-    make_config_cfg("${directory}" "${variant}" "${VARIANT_COMPILE_FLAGS}")
+    make_config_cfg("${target_triple}" "${TARGET_LIBRARIES_DIR}" "${directory}" "${variant}" "${VARIANT_COMPILE_FLAGS}")
     get_test_executor("${target_triple}" "${VARIANT_QEMU_MACHINE}" "${VARIANT_QEMU_CPU}" "${VARIANT_QEMU_PARAMS}")
     if(NOT PREBUILT_TARGET_LIBRARIES)
         if(USE_LIBC STREQUAL "picolibc")
@@ -1872,6 +1875,7 @@ if(ESP_TOOLCHAIN)
     set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
     set(pack_top_dir ${CPACK_PACKAGE_NAME})
     set(cpack_generated_filepath ${CPACK_PACKAGE_NAME}${package_filename_extension})
+    set(unpack_directory ${CMAKE_CURRENT_BINARY_DIR}/unpack/${pack_top_dir})
     add_custom_target(
         print-llvm-toolchain-package-path
         COMMAND "${CMAKE_COMMAND}" -E echo "${package_filepath}"
@@ -1935,6 +1939,7 @@ if(ESP_TOOLCHAIN)
         COMMAND "${CMAKE_COMMAND}" -E echo "${target_libs_package_filepath}"
     )
 else()
+    set(unpack_directory ${CMAKE_CURRENT_BINARY_DIR}/unpack/${binary_package_name})
     if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW OR WIN32)
         set(cpack_generator ZIP)
         set(package_filename_extension ".zip")
@@ -1958,7 +1963,6 @@ add_custom_target(
     package-llvm-toolchain
     DEPENDS ${package_filepath}
 )
-set(unpack_directory ${CMAKE_CURRENT_BINARY_DIR}/unpack/${binary_package_name})
 add_custom_target(
     clear-unpack-directory
     COMMAND "${CMAKE_COMMAND}" -E rm -rf unpack
