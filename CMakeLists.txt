@@ -524,20 +524,13 @@ if(ESP_TOOLCHAIN)
     endif()
 endif()
 
-function(get_llvm_version_numbers llvmproject_SOURCE_DIR)
-    # Grab the version out of LLVM sources
-    file(
-        STRINGS ${llvmproject_SOURCE_DIR}/llvm/CMakeLists.txt version_strings
-        REGEX [[set\(LLVM_VERSION_[A-Z]+ [0-9]+\)]]
-    )
-    string(REGEX MATCH [[MAJOR ([0-9]+)]] unused "${version_strings}")
-    set(LLVM_VERSION_MAJOR ${CMAKE_MATCH_1} PARENT_SCOPE)
-    string(REGEX MATCH [[MINOR ([0-9]+)]] unused "${version_strings}")
-    set(LLVM_VERSION_MINOR ${CMAKE_MATCH_1} PARENT_SCOPE)
-    string(REGEX MATCH [[PATCH ([0-9]+)]] unused "${version_strings}")
-    set(LLVM_VERSION_PATCH ${CMAKE_MATCH_1} PARENT_SCOPE)
-endfunction()
-get_llvm_version_numbers(${llvmproject_SOURCE_DIR})
+add_subdirectory(
+    ${llvmproject_SOURCE_DIR}/llvm llvm
+)
+
+get_directory_property(LLVM_VERSION_MAJOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MAJOR)
+get_directory_property(LLVM_VERSION_MINOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MINOR)
+get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_PATCH)
 
 if(ESP_TOOLCHAIN)
     set(LLVM_APPEND_VC_REV OFF CACHE BOOL "" FORCE)
@@ -666,10 +659,6 @@ else()
         endif()
     endif()
 endif()
-
-add_subdirectory(
-    ${llvmproject_SOURCE_DIR}/llvm llvm
-)
 
 # Including CPack again after llvm CMakeLists.txt included it
 # resets CPACK_PACKAGE_VERSION to the default MAJOR.MINOR.PATCH format.
