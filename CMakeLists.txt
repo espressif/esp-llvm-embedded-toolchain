@@ -1167,6 +1167,11 @@ Use -march to specify the architecture.")
         message(FATAL_ERROR "\
 Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\"")
     endif()
+    if(target_triple MATCHES "^(riscv32-esp-elf|xtensa-esp-elf)")
+        string(REPLACE "-esp-elf" "-esp-unknown-elf" normalized_target_triple ${target_triple})
+    else()
+        string(REPLACE "-none-" "-unknown-none-" normalized_target_triple ${target_triple})
+    endif()
 
     get_runtimes_flags("${directory}" "${flags}")
 
@@ -1243,7 +1248,7 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         TARGET compiler_rt_${variant}
         POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_directory
-            ${INSTALL_DIR}/lib/${target_triple} "${LLVM_BINARY_DIR}/${directory}/lib"
+            ${INSTALL_DIR}/lib/${normalized_target_triple} "${LLVM_BINARY_DIR}/${directory}/lib"
     )
 
     add_dependencies(
