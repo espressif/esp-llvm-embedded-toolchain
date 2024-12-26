@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+LIBS_VERSION="@esp_clang_libs_version@"
+
+if __name__ == "__main__":
+    print(LIBS_VERSION)

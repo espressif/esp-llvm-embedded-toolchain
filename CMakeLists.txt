@@ -244,6 +244,13 @@ set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS
 installed by the install-llvm-toolchain target"
 )
 
+if(ESP_TOOLCHAIN)
+    set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS
+        ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS}
+        esp-llvm-toolchain-extras
+    )
+endif()
+
 set(LLVM_Libraries_DISTRIBUTION_COMPONENTS
     clang-resource-headers
     clang-cpp
@@ -1829,6 +1836,20 @@ foreach(component ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS})
         install-${component}
     )
 endforeach()
+
+set(esp_clang_libs_version ${ESP_TOOLCHAIN_VER})
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/esp-helper.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/esp-helper.py
+    @ONLY
+)
+install(
+    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/esp-helper.py
+    DESTINATION bin
+    COMPONENT esp-llvm-toolchain-extras
+    RENAME esp-helper
+)
+
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
     # No further action needed to install because the LLVM distributables
     # are copied as part of the llvm-toolchain-mingw component in add_llvm_mingw().
@@ -1845,6 +1866,7 @@ else()
         install-llvm-standalone-libs
         install-libraries-distribution
         install-llvm-toolchain-third-party-licenses
+        install-esp-llvm-toolchain-extras
     )
 endif()
 
@@ -2095,6 +2117,7 @@ function(
         add_dependencies(
             install-llvm-${distro_name}
             install-llvm-toolchain-third-party-licenses
+            install-esp-llvm-toolchain-extras
         )
     else()
         add_dependencies(
