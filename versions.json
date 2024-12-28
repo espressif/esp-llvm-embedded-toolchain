@@ -8,8 +8,8 @@
   "repos": {
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
-      "tagType": "tag",
-      "tag": "esp-19.1.2_20250312"
+      "tagType": "branch",
+      "tag": "release/esp_20.x"
     },
     "picolibc": {
       "tagType": "commithash",
@@ -17,7 +17,7 @@
     },
     "newlib": {
       "tagType": "tag",
-      "tag": "esp-4.3.0_20241119"
+      "tag": "fix/qemu_riscv"
     },
     "binutils-gdb": {
       "tagType": "tag",

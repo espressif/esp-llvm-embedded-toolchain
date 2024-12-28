@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: %clang -print-multi-directory --target=armv5e-none-eabi -mfpu=none | FileCheck %s
 # CHECK: arm-none-eabi/armv5te_exn_rtti{{$}}
 # CHECK-EMPTY:

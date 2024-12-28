@@ -210,15 +210,15 @@ function(
         --disable-gdb --disable-nls
     )
 
-    if(HOST_TRIPLE MATCHES "darwin")
-        set(use_cc "${CMAKE_C_COMPILER_LAUNCHER} ${HOST_TRIPLE}-clang")
-        set(use_cxx "${CMAKE_C_COMPILER_LAUNCHER} ${HOST_TRIPLE}-clang++")
+    if(LLVM_TOOLCHAIN_HOST_TRIPLE MATCHES "darwin")
+        set(use_cc "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_TOOLCHAIN_HOST_TRIPLE}-clang")
+        set(use_cxx "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_TOOLCHAIN_HOST_TRIPLE}-clang++")
     else()
-        set(use_cc "${CMAKE_C_COMPILER_LAUNCHER} ${HOST_TRIPLE}-gcc")
-        set(use_cxx "${CMAKE_C_COMPILER_LAUNCHER} ${HOST_TRIPLE}-g++")
+        set(use_cc "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_TOOLCHAIN_HOST_TRIPLE}-gcc")
+        set(use_cxx "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_TOOLCHAIN_HOST_TRIPLE}-g++")
     endif()
 
-    if(HOST_TRIPLE MATCHES "mingw")
+    if(LLVM_TOOLCHAIN_HOST_TRIPLE MATCHES "mingw")
         set(EXE_SUFFIX ".exe")
     endif()
 
@@ -237,6 +237,12 @@ function(
         set(binutils_src_dir ${binutils_SOURCE_DIR})
     endif()
 
+    set(make_flags)
+    ProcessorCount(nproc)
+    if(NOT nproc EQUAL 0)
+        set(make_flags -j${nproc})
+    endif()
+
     ExternalProject_Add(
         binutils_${target_triple}
         SOURCE_DIR ${binutils_src_dir}
@@ -245,10 +251,10 @@ function(
         CONFIGURE_COMMAND 
             env CC=${use_cc}
             env CXX=${use_cxx}
-            ${binutils_src_dir}/configure --host=${HOST_TRIPLE} --target=${target_triple} --prefix=<INSTALL_DIR>
+            ${binutils_src_dir}/configure --host=${LLVM_TOOLCHAIN_HOST_TRIPLE} --target=${target_triple} --prefix=<INSTALL_DIR>
                 --program-prefix=${target_triple}-clang-
                 ${config_opts}
-        BUILD_COMMAND make -j${MAKE_JOBS_NUM}
+        BUILD_COMMAND make ${make_flags}
         INSTALL_COMMAND make install-strip
         USES_TERMINAL_CONFIGURE TRUE
         USES_TERMINAL_BUILD TRUE

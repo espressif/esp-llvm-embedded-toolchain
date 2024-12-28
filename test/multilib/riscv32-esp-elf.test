@@ -1,0 +1,5 @@
+# REQUIRES: target={{.*}}-esp-elf
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf | FileCheck %s
+# CHECK: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei_ilp32{{$}}
+# CHECK-EMPTY:

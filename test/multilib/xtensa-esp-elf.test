@@ -1,0 +1,5 @@
+# REQUIRES: target={{.*}}-esp-elf
+
+# RUN: %clang -print-multi-directory --target=xtensa-esp-elf | FileCheck %s
+# CHECK: xtensa-esp-unknown-elf/esp32{{$}}
+# CHECK-EMPTY:

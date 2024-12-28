@@ -1,3 +1,5 @@
+import os.path
+
 TESTS_TO_SKIP = [
 # Nested functions, unsupported in clang
 "20000822-1.c",
@@ -100,12 +102,19 @@ TESTS_TO_SKIP = [
 
 # Clang-16 error: error: size of array element of type 'XXX' (NNN bytes) isn't a multiple of its alignment (KKK bytes)
 "pr36093.c",
-"pr43783.c"
+"pr43783.c",
+
+# memory/stack overflow (too large allocations)
+"930106-1.c",
+"921208-2.c",
+"pr60822.c",
+"pr28982b.c",
+"pr23135.c",
 ]
 
 TESTS_TO_SKIP_RISCV = [
 # Xtensa specific
-"abi/call_abi_test.c"
+os.path.join("abi", "call_abi_test.c")
 ]
 
 TESTS_TO_SKIP_XTENSA = [
@@ -206,4 +215,20 @@ TESTS_TO_SKIP_XTENSA = [
 "930529-1.c",
 "pr22493-1.c",
 "pr23047.c",
+
+# Can not fit to RAM
+"pr51581-1.c",
+"20030209-1.c",
+"pr20621-1.c",
+"pr51581-2.c",
+
+# Look slike stackoverflow in test when running QEMU
+"memcpy-1.c",
 ]
+
+PER_FILE_OPTS_RISCV = {
+}
+
+PER_FILE_OPTS_XTENSA = {
+    os.path.join("abi", "call_abi_test.c"): os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Inputs", "call_abi_lib.o")
+}

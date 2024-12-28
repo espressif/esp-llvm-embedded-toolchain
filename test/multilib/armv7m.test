@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: %clang -print-multi-directory --target=armv7m-none-eabi -mfpu=none | FileCheck %s --check-prefix=NONE
 # RUN: %clang -print-multi-directory --target=armv7m-none-eabi -mfpu=none -mfloat-abi=softfp | FileCheck %s --check-prefix=NONE
 # RUN: %clang -print-multi-directory --target=armv7em-none-eabi -mfpu=none -mfloat-abi=softfp | FileCheck %s --check-prefix=NONE

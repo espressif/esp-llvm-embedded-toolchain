@@ -133,7 +133,7 @@ directory for the current set of differences from upstream.
 
 Espressif exteneded original Cmake scripts with the following features:
 * Toolchain can be built for several target architectures. RISCV and Xtensa. See `LLVM_TOOLCHAIN_ENABLED_TARGETS`.
-* Toolchain can be built for several host architecures (x86_64/ARM/ARM64) and platforms (Linux, MacOS, Windows). See `HOST_TRIPLE`.
+* Toolchain can be built for several host architecures (x86_64/ARM/ARM64) and platforms (Linux, MacOS, Windows). See `LLVM_TOOLCHAIN_HOST_TRIPLE`.
 * User can select whether and what C library should be included into toolchain: newlib or picolibc. See `USE_LIBC`. ***NOTE: Picolibc was not tested yet***.
 * User can select what run-time librarires should be included into toolchain: `compiler-rt` and/or `libgcc`. See `USE_RTLIB`. Currently pre-built `libgcc` binaries are picked up from the specified Espressif GNU toolchain release (see `ESP_GNU_TOOLCHAIN_VER`).
 * User can select what C++ librarires should be included into toolchain: `libstdc++` and/or `libcxx`. See `USE_LIBCXX`. Currently pre-built `libstdc++` binaries are picked up from the specified Espressif GNU toolchain release (see `ESP_GNU_TOOLCHAIN_VER`). ***NOTE: Building `libcxx` is not well tested yet***.
@@ -143,14 +143,14 @@ Espressif exteneded original Cmake scripts with the following features:
 
 Variable name       | Description
 --------------------|-------------
-ESP_TOOLCHAIN | Enables options specific to Espressif toolchain build. `YES` or `NO`.
-HOST_TRIPLE | Host triple to build toolchain for. String.
+LLVM_TOOLCHAIN_ESPRESSIF | Enables options specific to Espressif toolchain build. `YES` or `NO`.
+LLVM_TOOLCHAIN_HOST_TRIPLE | Host triple to build toolchain for. String.
 LLVM_TOOLCHAIN_ENABLED_TARGETS | Build only the specified targets. If not specified then build all targets. Semicolon separated list, e.g. `RISCV;Xtensa`.
-USE_LIBC | What libc to use for toolchain. One of `picolibc`, `newlib` or `none`. String.
-USE_RTLIB | What run time library to include into toolchain: `compiler-rt`, `libgcc`. Semicolon separated list.
-USE_LIBCXX | What C++ library to include into toolchain: `libcxx`, `libstdcxx`. Semicolon separated list.
-USE_BINUTILS | Includes GNU binutils into toolchain. `YES` or `NO`.
-ESP_GNU_TOOLCHAIN_VER | Espressif GNU toolchain version to pick libgcc and libstdc++ from. String.
+LLVM_TOOLCHAIN_C_LIBRARY | What libc to use for toolchain. One of `picolibc`, `newlib` or `none`. String.
+LLVM_TOOLCHAIN_RT_LIBRARIES | What run time library to include into toolchain: `compiler-rt`, `libgcc`. Semicolon separated list.
+LLVM_TOOLCHAIN_CXX_LIBRARIES | What C++ library to include into toolchain: `libcxx`, `libstdcxx`. Semicolon separated list.
+LLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS | Includes GNU binutils into toolchain. `YES` or `NO`.
+LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER | Espressif GNU toolchain version to pick libgcc and libstdc++ from. String.
 LLVM_PROJECT_REPO_URL | llvm-project repo URL. String. Default `https://github.com/espressif/llvm-project.git`
 NEWLIB_REPO_URL | Newlib repo URL. String. Default `https://github.com/espressif/newlib-esp32.git`
 BINUTILS_REPO_URL | Binutils repo URL. String. Default `https://github.com/espressif/binutils-gdb.git`
@@ -171,14 +171,14 @@ cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
         -DBINUTILS_REPO_URL="https://github.com/espressif/binutils-gdb.git" \
         -DXTENSA_OVERLAYS_REPO_URL="https://github.com/espressif/xtensa-overlays.git" \
         -DFETCHCONTENT_QUIET=OFF \
-        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DLLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
         -DCPACK_ARCHIVE_THREADS=0 \
-        -DUSE_LIBC=newlib \
-        -DUSE_LIBCXX="libstdcxx" \
-        -DUSE_RTLIB="compiler-rt;libgcc" \
-        -DUSE_BINUTILS=ON \
-        -DESP_TOOLCHAIN=ON \
-        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_C_LIBRARY=newlib \
+        -DLLVM_TOOLCHAIN_CXX_LIBRARIES="libstdcxx" \
+        -DLLVM_TOOLCHAIN_RT_LIBRARIES="compiler-rt;libgcc" \
+        -DLLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS=ON \
+        -DLLVM_TOOLCHAIN_ESPRESSIF=ON \
+        -DLLVM_TOOLCHAIN_HOST_TRIPLE=x86_64-linux-gnu \
         -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa" \
         --install-prefix=/tmp/esp-clang_Release
 
@@ -203,14 +203,14 @@ cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
         -DFETCHCONTENT_SOURCE_DIR_NEWLIB=/home/user/newlib-cygwin \
         -DFETCHCONTENT_SOURCE_DIR_XTENSA_OVERLAYS=/home/user/xtensa-overlays \
         -DFETCHCONTENT_QUIET=OFF \
-        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DLLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
         -DCPACK_ARCHIVE_THREADS=0 \
-        -DUSE_LIBC=newlib \
-        -DUSE_LIBCXX="libstdcxx" \
-        -DUSE_RTLIB="compiler-rt;libgcc" \
-        -DUSE_BINUTILS=ON \
-        -DESP_TOOLCHAIN=ON \
-        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_C_LIBRARY=newlib \
+        -DLLVM_TOOLCHAIN_CXX_LIBRARIES="libstdcxx" \
+        -DLLVM_TOOLCHAIN_RT_LIBRARIES="compiler-rt;libgcc" \
+        -DLLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS=ON \
+        -DLLVM_TOOLCHAIN_ESPRESSIF=ON \
+        -DLLVM_TOOLCHAIN_HOST_TRIPLE=x86_64-linux-gnu \
         -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa" \
         --install-prefix=/tmp/esp-clang_Release
 
@@ -230,14 +230,14 @@ If you want to build toolchain for the host other then `x86_64-linux-gnu` you ne
 ```bash
 cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
         -DFETCHCONTENT_QUIET=OFF \
-        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DLLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
         -DCPACK_ARCHIVE_THREADS=0 \
-        -DUSE_LIBC=newlib \
-        -DUSE_LIBCXX="libstdcxx" \
-        -DUSE_RTLIB="compiler-rt;libgcc" \
-        -DUSE_BINUTILS=ON \
-        -DESP_TOOLCHAIN=ON \
-        -DHOST_TRIPLE=x86_64-linux-gnu \
+        -DLLVM_TOOLCHAIN_C_LIBRARY=newlib \
+        -DLLVM_TOOLCHAIN_CXX_LIBRARIES="libstdcxx" \
+        -DLLVM_TOOLCHAIN_RT_LIBRARIES="compiler-rt;libgcc" \
+        -DLLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS=ON \
+        -DLLVM_TOOLCHAIN_ESPRESSIF=ON \
+        -DLLVM_TOOLCHAIN_HOST_TRIPLE=x86_64-linux-gnu \
         -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
 
 # package target libraries
@@ -253,14 +253,14 @@ To build for MacOS you need to install [OSXCROSS](https://github.com/tpoechtrage
 ```bash
 cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
         -DFETCHCONTENT_QUIET=OFF \
-        -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
+        -DLLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
         -DCPACK_ARCHIVE_THREADS=0 \
-        -DUSE_LIBC=none \
-        -DUSE_LIBCXX="" \
-        -DUSE_RTLIB="" \
-        -DUSE_BINUTILS=ON \
-        -DESP_TOOLCHAIN=ON \
-        -DHOST_TRIPLE=x86_64-apple-darwin21.1 \
+        -DLLVM_TOOLCHAIN_C_LIBRARY=none \
+        -DLLVM_TOOLCHAIN_CXX_LIBRARIES="" \
+        -DLLVM_TOOLCHAIN_RT_LIBRARIES="" \
+        -DLLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS=ON \
+        -DLLVM_TOOLCHAIN_ESPRESSIF=ON \
+        -DLLVM_TOOLCHAIN_HOST_TRIPLE=x86_64-apple-darwin21.1 \
         -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
 
 # package toolchain
@@ -279,13 +279,13 @@ cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
         -DFETCHCONTENT_QUIET=OFF \
         -DESP_GNU_TOOLCHAIN_VER="13.2.0_20240305" \
         -DCPACK_ARCHIVE_THREADS=0 \
-        -DUSE_LIBC=none \
-        -DUSE_LIBCXX="" \
-        -DUSE_RTLIB="" \
-        -DUSE_BINUTILS=ON \
-        -DESP_TOOLCHAIN=ON \
+        -DLLVM_TOOLCHAIN_C_LIBRARY=none \
+        -DLLVM_TOOLCHAIN_CXX_LIBRARIES="" \
+        -DLLVM_TOOLCHAIN_RT_LIBRARIES="" \
+        -DLLVM_TOOLCHAIN_INCLUDE_GNU_BINUTILS=ON \
+        -DLLVM_TOOLCHAIN_ESPRESSIF=ON \
         -DLLVM_TOOLCHAIN_CROSS_BUILD_MINGW=ON \
-        -DHOST_TRIPLE=x86_64-w64-mingw32 \
+        -DLLVM_TOOLCHAIN_HOST_TRIPLE=x86_64-w64-mingw32 \
         -DLLVM_TOOLCHAIN_ENABLED_TARGETS="RISCV;Xtensa"
 
 # package toolchain

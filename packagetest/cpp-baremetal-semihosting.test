@@ -1,8 +1,8 @@
 # RUN: %if target={{.*}}-esp-elf  \
 # RUN:   %{ \
-# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean && \
-# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s && \
-# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean \
+# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean && \
+# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s && \
+# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean \
 # RUN:   %} \
 # RUN: %else \
 # RUN:   %{ \

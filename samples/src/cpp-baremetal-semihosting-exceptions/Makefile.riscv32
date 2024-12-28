@@ -1,0 +1,19 @@
+include ../../Makefile.conf
+
+build: hello.elf hello-exn.elf
+
+# TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
+hello.elf: hello.cpp
+	$(BIN_PATH)/clang++ -march=rv32imc -mabi=ilp32 -fno-exceptions -fno-rtti --rtlib=libgcc --unwindlib=none -nostartfiles -lcrt1-sim -lsemihost -lpthread_stubs -g -T ../../ldscripts/esp32c3.ld -o hello.elf $^
+
+hello-exn.elf: hello-exn.cpp
+	$(BIN_PATH)/clang++ -march=rv32imc -mabi=ilp32 -fno-rtti --rtlib=libgcc --unwindlib=none -nostartfiles -lcrt1-sim -lsemihost -lpthread_stubs -g -T ../../ldscripts/esp32c3.ld -o hello-exn.elf $^
+
+run: hello.elf hello-exn.elf
+	qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel hello.elf
+	qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel hello-exn.elf  2>&1 | grep "caught"
+
+clean:
+	rm -f *.elf
+
+.PHONY: clean run

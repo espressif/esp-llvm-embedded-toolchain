@@ -1,122 +1,108 @@
+function(add_esp_library_variants_for_cpu target_arch)
+    set(
+        one_value_args
+        SUFFIX
+        COMPILE_FLAGS
+        MULTILIB_FLAGS
+        PICOLIBC_BUILD_TYPE
+        QEMU_MACHINE
+        QEMU_CPU
+        QEMU_PARAMS
+        BOOT_FLASH_ADDRESS
+        BOOT_FLASH_SIZE
+        FLASH_ADDRESS
+        FLASH_SIZE
+        RAM_ADDRESS
+        RAM_SIZE
+        STACK_SIZE
+    )
+    cmake_parse_arguments(VARIANT "" "${one_value_args}" "" ${ARGN})
+
+    foreach(enable_rtti IN ITEMS ON OFF)
+        set(SUFFIXES)
+        if(VARIANT_SUFFIX)
+            list(APPEND SUFFIXES ${VARIANT_SUFFIX})
+        endif()
+        if(NOT enable_rtti)
+            list(APPEND SUFFIXES "no-rtti")
+        endif()
+        list(JOIN SUFFIXES "_" COMBINED_SUFFIX)
+
+        add_library_variant(
+            "${target_arch}"
+            SUFFIX "${COMBINED_SUFFIX}"
+            COMPILE_FLAGS "${VARIANT_COMPILE_FLAGS}"
+            MULTILIB_FLAGS "${VARIANT_MULTILIB_FLAGS}"
+            PICOLIBC_BUILD_TYPE "${VARIANT_PICOLIBC_BUILD_TYPE}"
+            QEMU_MACHINE "${VARIANT_QEMU_MACHINE}"
+            QEMU_CPU "${VARIANT_QEMU_CPU}"
+            QEMU_PARAMS "${VARIANT_QEMU_PARAMS}"
+            BOOT_FLASH_ADDRESS "${VARIANT_BOOT_FLASH_ADDRESS}"
+            BOOT_FLASH_SIZE "${VARIANT_BOOT_FLASH_SIZE}"
+            FLASH_ADDRESS "${VARIANT_FLASH_ADDRESS}"
+            FLASH_SIZE "${VARIANT_FLASH_SIZE}"
+            RAM_ADDRESS "${VARIANT_RAM_ADDRESS}"
+            RAM_SIZE "${VARIANT_RAM_SIZE}"
+            STACK_SIZE "${VARIANT_STACK_SIZE}"
+            ENABLE_EXCEPTIONS ON
+            ENABLE_RTTI "${enable_rtti}"
+        )
+    endforeach()
+
+    set(multilib_yaml_content "${multilib_yaml_content}" PARENT_SCOPE)
+endfunction()
+
 # RISCV
-add_library_variant(
+add_esp_library_variants_for_cpu(
     rv32i-zicsr-zifencei
     SUFFIX ilp32
     COMPILE_FLAGS "-march=rv32i_zicsr_zifencei -mabi=ilp32"
     MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i_zicsr_zifencei -mabi=ilp32"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
 )
-add_library_variant(
-    rv32i-zicsr-zifencei
-    SUFFIX ilp32_no-rtti
-    COMPILE_FLAGS "-march=rv32i_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     rv32imc-zicsr-zifencei
     SUFFIX ilp32
     COMPILE_FLAGS "-march=rv32imc_zicsr_zifencei -mabi=ilp32"
     MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imc_zicsr_zifencei -mabi=ilp32"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
+    QEMU_MACHINE "esp32c3"
 )
-add_library_variant(
-    rv32imc-zicsr-zifencei
-    SUFFIX ilp32_no-rtti
-    COMPILE_FLAGS "-march=rv32imc_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imc_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     rv32imac-zicsr-zifencei
     SUFFIX ilp32
     COMPILE_FLAGS "-march=rv32imac_zicsr_zifencei -mabi=ilp32"
     MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imac_zicsr_zifencei -mabi=ilp32"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
 )
-add_library_variant(
-    rv32imac-zicsr-zifencei
-    SUFFIX ilp32_no-rtti
-    COMPILE_FLAGS "-march=rv32imac_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imac_zicsr_zifencei -mabi=ilp32 -fno-rtti"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     rv32imafc-zicsr-zifencei-zba-zbb-zbc-zbs
     SUFFIX ilp32f
     COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
     MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
 )
-add_library_variant(
-    rv32imafc-zicsr-zifencei-zba-zbb-zbc-zbs
-    SUFFIX ilp32f_no-rtti
-    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f -fno-rtti"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f -fno-rtti"
-    QEMU_MACHINE "riscv32"
-    QEMU_CPU "rv32"
-)
+
 # Xtensa
-add_library_variant(
+add_esp_library_variants_for_cpu(
     esp32
     SUFFIX ""
-    COMPILE_FLAGS "-mcpu=esp32"
+    COMPILE_FLAGS "--target=xtensa-esp-elf -mcpu=esp32"
     MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32"
     QEMU_MACHINE "esp32"
 )
-add_library_variant(
-    esp32
-    SUFFIX no-rtti
-    COMPILE_FLAGS "-mcpu=esp32 -fno-rtti"
-    MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32 -fno-rtti"
-    QEMU_MACHINE "esp32"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     esp32
     SUFFIX psram
-    COMPILE_FLAGS "-mcpu=esp32 -mfix-esp32-psram-cache-issue"
+    COMPILE_FLAGS "--target=xtensa-esp-elf -mcpu=esp32 -mfix-esp32-psram-cache-issue"
     MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32 -mfix-esp32-psram-cache-issue"
     QEMU_MACHINE "esp32"
 )
-add_library_variant(
-    esp32
-    SUFFIX psram_no-rtti
-    COMPILE_FLAGS "-mcpu=esp32 -mfix-esp32-psram-cache-issue -fno-rtti"
-    MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32 -mfix-esp32-psram-cache-issue -fno-rtti"
-    QEMU_MACHINE "esp32"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     esp32s2
     SUFFIX ""
-    COMPILE_FLAGS "-mcpu=esp32s2"
+    COMPILE_FLAGS "--target=xtensa-esp-elf -mcpu=esp32s2"
     MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32s2"
-    QEMU_MACHINE "esp32s2"
 )
-add_library_variant(
-    esp32s2
-    SUFFIX no-rtti
-    COMPILE_FLAGS "-mcpu=esp32s2 -fno-rtti"
-    MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32s2 -fno-rtti"
-    QEMU_MACHINE "esp32s3"
-)
-add_library_variant(
+add_esp_library_variants_for_cpu(
     esp32s3
     SUFFIX ""
-    COMPILE_FLAGS "-mcpu=esp32s3"
+    COMPILE_FLAGS "--target=xtensa-esp-elf -mcpu=esp32s3"
     MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32s3"
-    QEMU_MACHINE "esp32s3"
-)
-add_library_variant(
-    esp32s3
-    SUFFIX no-rtti
-    COMPILE_FLAGS "-mcpu=esp32s3 -fno-rtti"
-    MULTILIB_FLAGS "--target=xtensa-esp-unknown-elf -mcpu=esp32s3 -fno-rtti"
-    QEMU_MACHINE "esp32s3"
 )

@@ -3,7 +3,7 @@ include ../../Makefile.conf
 build: hello.elf
 
 hello.elf: *.c
-	$(BIN_PATH)/clang --config esp32_no-rtti_qemu_semihost.cfg --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack -g -o hello.elf $^
+	$(BIN_PATH)/clang --target=xtensa-esp-elf -mcpu=esp32 -fno-rtti -nostartfiles -lcrt1-sim -lpthread_stubs -Wl,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive -T memory.elf.ld -T app.elf.ld --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack -g -o hello.elf $^
 
 run: hello.elf
 	qemu-system-xtensa -nographic -machine esp32 --semihosting -kernel $<

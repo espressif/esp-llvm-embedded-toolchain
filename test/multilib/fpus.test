@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: %clang -print-multi-flags-experimental --target=arm-none-eabihf -march=armv7m -mfpu=fpv5-d16 | FileCheck --check-prefixes=VFPV4-D16,FPV4-SP-D16,FPV5-SP-D16 %s
 
 # RUN: %clang -print-multi-flags-experimental --target=arm-none-eabihf -march=armv7m -mfpu=fpv5-sp-d16 | FileCheck --check-prefix=FPV4-SP-D16 %s

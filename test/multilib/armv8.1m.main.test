@@ -1,3 +1,5 @@
+# UNSUPPORTED: target={{.*}}-esp-elf
+
 # RUN: %clang -print-multi-directory --target=armv8.1m.main-none-eabi -mfpu=none | FileCheck %s
 # CHECK: arm-none-eabi/armv8.1m.main_soft_nofp_nomve_exn_rtti{{$}}
 # CHECK-EMPTY:

@@ -2,13 +2,13 @@
 
 // RUN: %if target={{.*}}-esp-elf  \
 // RUN:   %{ \
-// RUN:     %clangxx --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc %s -o %t.out && \
-// RUN:     qemu-riscv32 -cpu rv32 %t.out 2>&1 | FileCheck %s \
+// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --rtlib=libgcc --unwindlib=none -nostartfiles -lcrt1-sim -lsemihost -lpthread_stubs -T %S/Inputs/esp32c3.ld %s -o %t.out && \
+// RUN:     qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel %t.out 2>&1 | FileCheck %s \
 // RUN:   %} \
 // RUN: %else \
 // RUN:   %{ \
 // RUN:     %clangxx --target=armv6m-none-eabi -mfloat-abi=soft -march=armv6m -mfpu=none -lcrt0-semihost -lsemihost -fno-exceptions -fno-rtti -T %S/Inputs/microbit.ld %s -o %t.out && \
-// RUN:     qemu-system-arm -M microbit -semihosting -nographic -device loader,file=%t.out 2>&1 | FileCheck %s
+// RUN:     qemu-system-arm -M microbit -semihosting -nographic -device loader,file=%t.out 2>&1 | FileCheck %s \
 // RUN:   %}
 
 // Include as many C++17 headers as possible.
@@ -106,4 +106,21 @@ int main(void) {
     std::string str = "Hello World!";
     std::cout << str << std::endl; // CHECK: Hello World!
     return 0;
+}
+
+extern "C" 
+{
+
+#ifndef _GLIBCXX_HAVE_ATOMIC_LOCK_POLICY
+int pthread_mutex_lock (pthread_mutex_t *__mutex) {
+  return 0;
+}
+int pthread_mutex_unlock (pthread_mutex_t *__mutex) {
+  return 0;
+}
+int pthread_cond_broadcast (pthread_cond_t *__cond) {
+  return 0;
+}
+#endif
+
 }

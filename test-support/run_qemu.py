@@ -32,23 +32,19 @@ def run_qemu(
     #     "arg=" + arg.replace(",", ",,") for arg in arguments
     # ]
     # qemu_params += ["-semihosting-config", ",".join(semihosting_config)]
-    if qemu_machine != "riscv32":
-        qemu_params += ["--semihosting"]
+    qemu_params += ["--semihosting"]
 
     # Disable features we don't need and which could slow down the test or
     # interfere with semihosting.
     # qemu_params += ["-monitor", "none", "-serial", "none", "-nographic"]
-    if qemu_machine != "riscv32":
-        qemu_params += ["-nographic"]
+    qemu_params += ["-nographic"]
 
     # Load the image to machine's memory and set the PC.
     # "virt" machine cannot be used with load, as QEMU will try to put
     # device tree blob at start of RAM conflicting with our code
     # https://www.qemu.org/docs/master/system/arm/virt.html#hardware-configuration-information-for-bare-metal-programming
-    if qemu_machine == "virt" or qemu_machine == "esp32":
+    if qemu_machine in ["virt", "esp32", "esp32c3"]:
         qemu_params += ["-kernel", image]
-    elif qemu_machine == "riscv32":
-        qemu_params += [image]
     else:
         qemu_params += ["-device", f"loader,file={image},cpu-num=0"]
 
