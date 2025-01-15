@@ -48,18 +48,18 @@ add_library_variant(
     QEMU_CPU "rv32"
 )
 add_library_variant(
-    rv32imafc-zicsr-zifencei
+    rv32imafc-zicsr-zifencei-zba-zbb-zbc-zbs
     SUFFIX ilp32f
-    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei -mabi=ilp32f"
+    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
     QEMU_MACHINE "riscv32"
     QEMU_CPU "rv32"
 )
 add_library_variant(
-    rv32imafc-zicsr-zifencei
+    rv32imafc-zicsr-zifencei-zba-zbb-zbc-zbs
     SUFFIX ilp32f_no-rtti
-    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei -mabi=ilp32f -fno-rtti"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei -mabi=ilp32f -fno-rtti"
+    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f -fno-rtti"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f -fno-rtti"
     QEMU_MACHINE "riscv32"
     QEMU_CPU "rv32"
 )
