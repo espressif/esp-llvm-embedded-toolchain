@@ -191,19 +191,25 @@ Mappings:
   - -march=rv32imac_zicsr_zifencei
 - Match: -march=rv32imafc
   Flags:
-  - -march=rv32imafc_zicsr_zifencei
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
+- Match: -march=rv32imafc_zicsr_zifencei
+  Flags:
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
 - Match: -march=rv32imafdc
   Flags:
-  - -march=rv32imafc_zicsr_zifencei
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
 - Match: -march=rv32gc
   Flags:
-  - -march=rv32imafc_zicsr_zifencei
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
 
 # Below is a workaround to support multilib for xesppie variant
 # Currently it is added for ESP32-P4 arch only
 - Match: -march=rv32imafc_xesppie
   Flags:
-  - -march=rv32imafc_zicsr_zifencei
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
 - Match: -march=rv32imafc_zicsr_zifencei_xesppie
   Flags:
-  - -march=rv32imafc_zicsr_zifencei
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
+- Match: -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs_xesppie
+  Flags:
+  - -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs
