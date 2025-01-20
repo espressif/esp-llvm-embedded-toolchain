@@ -20,8 +20,8 @@
       "tag": "esp-4.3.0_20241119"
     },
     "binutils-gdb": {
-      "tagType": "tag",
-      "tag": "esp-2.43.1_20241119"
+      "tagType": "branch",
+      "tag": "esp-binutils-2_43"
     },
     "xtensa-overlays": {
       "tagType": "branch",
