@@ -8,8 +8,8 @@
   "repos": {
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
-      "tagType": "branch",
-      "tag": "xtensa_release_19.1.2"
+      "tagType": "tag",
+      "tag": "esp-19.1.2_20250211"
     },
     "picolibc": {
       "tagType": "commithash",
@@ -20,8 +20,8 @@
       "tag": "esp-4.3.0_20241119"
     },
     "binutils-gdb": {
-      "tagType": "branch",
-      "tag": "esp-binutils-2_43"
+      "tagType": "tag",
+      "tag": "esp-2.43.1_20250211"
     },
     "xtensa-overlays": {
       "tagType": "branch",
