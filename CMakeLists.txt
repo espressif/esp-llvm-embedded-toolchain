@@ -541,16 +541,24 @@ if(ESP_TOOLCHAIN)
     endif()
 endif()
 
-add_subdirectory(
-    ${llvmproject_SOURCE_DIR}/llvm llvm
-)
-
-get_directory_property(LLVM_VERSION_MAJOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MAJOR)
-get_directory_property(LLVM_VERSION_MINOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MINOR)
-get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_PATCH)
-
 if(ESP_TOOLCHAIN)
-    set(LLVM_APPEND_VC_REV OFF CACHE BOOL "" FORCE)
+    message(WARNING "ESP_TOOLCHAIN_VER=${ESP_TOOLCHAIN_VER}")
+    if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
+        execute_process(
+            COMMAND git describe --abbrev=7
+            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            set(result "<unknown commit>")
+            message(WARNING "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
+        endif()
+        set(ESP_TOOLCHAIN_VER "${result}")
+        message(WARNING "ESP_TOOLCHAIN_VER2=${ESP_TOOLCHAIN_VER}")
+    endif()
+    # This should appear before add LLVM subdir in order to override CLANG_REPOSITORY_STRING
     if("${CLANG_REPOSITORY_STRING}" STREQUAL "")
         execute_process(
             COMMAND git remote get-url origin
@@ -565,22 +573,19 @@ if(ESP_TOOLCHAIN)
         endif()
         set(CLANG_REPOSITORY_STRING "${result}")
     endif()
-    if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
-        execute_process(
-            COMMAND git describe --abbrev=7
-            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            OUTPUT_VARIABLE result
-            RESULT_VARIABLE ret
-        )
-        if(NOT ret EQUAL 0)
-            set(result "<unknown commit>")
-            message(WARNING "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
-        endif()
-        set(ESP_TOOLCHAIN_VER "${result}")
-    endif()
     set(CLANG_REPOSITORY_STRING "${CLANG_REPOSITORY_STRING} ${ESP_TOOLCHAIN_VER}" CACHE STRING "" FORCE)
+    message(WARNING "CLANG_REPOSITORY_STRING=${CLANG_REPOSITORY_STRING}")
+endif()
 
+add_subdirectory(
+    ${llvmproject_SOURCE_DIR}/llvm llvm
+)
+
+get_directory_property(LLVM_VERSION_MAJOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MAJOR)
+get_directory_property(LLVM_VERSION_MINOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MINOR)
+get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_PATCH)
+
+if(ESP_TOOLCHAIN)
     project(
         EspLLVMEmbeddedToolchain
         VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
