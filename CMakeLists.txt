@@ -587,7 +587,7 @@ get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/ll
 
 if(ESP_TOOLCHAIN)
     project(
-        EspLLVMEmbeddedToolchain
+        LLVMEmbeddedToolchainForArm
         VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
         DESCRIPTION "Espressif LLVM Embedded Toolchain"
         HOMEPAGE_URL "https://github.com/espressif/esp-llvm-embedded-toolchain"
