@@ -36,3 +36,15 @@ add_lit_testsuite(check-package-llvm-toolchain
 add_lit_testsuites(package-llvm-toolchain ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS ${LLVM_TOOLCHAIN_PACKAGE_TEST_DEPS}
 )
+
+execute_process(
+    COMMAND git -C ${llvmproject_SOURCE_DIR} describe --abbrev=7
+    OUTPUT_VARIABLE llvmproject_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/check_clang_ver.test.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/check_clang_ver.test
+)
