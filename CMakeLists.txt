@@ -542,7 +542,6 @@ if(ESP_TOOLCHAIN)
 endif()
 
 if(ESP_TOOLCHAIN)
-    message(WARNING "ESP_TOOLCHAIN_VER=${ESP_TOOLCHAIN_VER}")
     if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
         execute_process(
             COMMAND git describe --abbrev=7
@@ -556,7 +555,6 @@ if(ESP_TOOLCHAIN)
             message(WARNING "This is a bug. Please report to https://github.com/espressif/esp-llvm-embedded-toolchain/issues")
         endif()
         set(ESP_TOOLCHAIN_VER "${result}")
-        message(WARNING "ESP_TOOLCHAIN_VER2=${ESP_TOOLCHAIN_VER}")
     endif()
     # This should appear before add LLVM subdir in order to override CLANG_REPOSITORY_STRING
     if("${CLANG_REPOSITORY_STRING}" STREQUAL "")
@@ -574,7 +572,6 @@ if(ESP_TOOLCHAIN)
         set(CLANG_REPOSITORY_STRING "${result}")
     endif()
     set(CLANG_REPOSITORY_STRING "${CLANG_REPOSITORY_STRING} ${ESP_TOOLCHAIN_VER}" CACHE STRING "" FORCE)
-    message(WARNING "CLANG_REPOSITORY_STRING=${CLANG_REPOSITORY_STRING}")
 endif()
 
 add_subdirectory(
