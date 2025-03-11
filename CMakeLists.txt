@@ -254,13 +254,6 @@ set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS
 installed by the install-llvm-toolchain target"
 )
 
-if(ESP_TOOLCHAIN)
-    set(LLVM_EXTRA_DISTRIBUTION_COMPONENTS
-        ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS}
-        esp-llvm-toolchain-extras
-    )
-endif()
-
 set(LLVM_Libraries_DISTRIBUTION_COMPONENTS
     clang-resource-headers
     clang-cpp
@@ -1854,18 +1847,28 @@ foreach(component ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS})
     )
 endforeach()
 
-set(esp_clang_libs_version ${ESP_TOOLCHAIN_VER})
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/esp-helper.py.in
-    ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/esp-helper.py
-    @ONLY
-)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/esp-helper.py
-    DESTINATION bin
-    COMPONENT esp-llvm-toolchain-extras
-    RENAME esp-helper
-)
+if(ESP_TOOLCHAIN)
+    add_custom_target(
+        install-esp-llvm-toolchain-extras
+        COMMAND
+            "${CMAKE_COMMAND}"
+            --install ${CMAKE_BINARY_DIR}
+            --component esp-llvm-toolchain-extras
+        USES_TERMINAL
+    )
+
+    set(esp_clang_libs_version ${ESP_TOOLCHAIN_VER})
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/esp-clang-libs.info.in
+        ${CMAKE_CURRENT_BINARY_DIR}/llvm/esp-clang-libs.info
+        @ONLY
+    )
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/llvm/esp-clang-libs.info
+        DESTINATION .
+        COMPONENT esp-llvm-toolchain-extras
+    )
+endif()
 
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
     # No further action needed to install because the LLVM distributables
