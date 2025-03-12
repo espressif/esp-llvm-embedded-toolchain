@@ -9,7 +9,7 @@
     "llvm-project": {
       "comment": "tagType can be branch, tag or commithash",
       "tagType": "tag",
-      "tag": "esp-19.1.2_20250211"
+      "tag": "esp-19.1.2_20250312"
     },
     "picolibc": {
       "tagType": "branch",
