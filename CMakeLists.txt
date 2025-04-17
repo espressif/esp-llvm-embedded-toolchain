@@ -654,16 +654,22 @@ if(LLVM_TOOLCHAIN_C_LIBRARY STREQUAL llvmlibc)
     )
 endif()
 
-add_subdirectory(
-    ${llvmproject_SOURCE_DIR}/llvm llvm
-)
-
-get_directory_property(LLVM_VERSION_MAJOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MAJOR)
-get_directory_property(LLVM_VERSION_MINOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MINOR)
-get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_PATCH)
-
 if(LLVM_TOOLCHAIN_ESPRESSIF)
-    set(LLVM_APPEND_VC_REV OFF CACHE BOOL "" FORCE)
+    if("${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}" STREQUAL "")
+        execute_process(
+            COMMAND git describe --abbrev=7
+            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            set(result "<unknown commit>")
+            message(WARNING "This is a bug. Please report to ${BUG_REPORT_URL}")
+        endif()
+        set(LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER "${result}")
+    endif()
+    # This should appear before add LLVM subdir in order to override CLANG_REPOSITORY_STRING
     if("${CLANG_REPOSITORY_STRING}" STREQUAL "")
         execute_process(
             COMMAND git remote get-url origin
@@ -678,22 +684,18 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
         endif()
         set(CLANG_REPOSITORY_STRING "${result}")
     endif()
-    if("${ESP_TOOLCHAIN_VER}" STREQUAL "")
-        execute_process(
-            COMMAND git describe --abbrev=7
-            WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            OUTPUT_VARIABLE result
-            RESULT_VARIABLE ret
-        )
-        if(NOT ret EQUAL 0)
-            set(result "<unknown commit>")
-            message(WARNING "This is a bug. Please report to ${BUG_REPORT_URL}")
-        endif()
-        set(ESP_TOOLCHAIN_VER "${result}")
-    endif()
-    set(CLANG_REPOSITORY_STRING "${CLANG_REPOSITORY_STRING} ${ESP_TOOLCHAIN_VER}" CACHE STRING "" FORCE)
+    set(CLANG_REPOSITORY_STRING "${CLANG_REPOSITORY_STRING} ${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}" CACHE STRING "" FORCE)
+endif()
 
+add_subdirectory(
+    ${llvmproject_SOURCE_DIR}/llvm llvm
+)
+
+get_directory_property(LLVM_VERSION_MAJOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MAJOR)
+get_directory_property(LLVM_VERSION_MINOR DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_MINOR)
+get_directory_property(LLVM_VERSION_PATCH DIRECTORY ${llvmproject_SOURCE_DIR}/llvm DEFINITION LLVM_VERSION_PATCH)
+
+if(LLVM_TOOLCHAIN_ESPRESSIF)
     project(
         EspLLVMEmbeddedToolchain
         VERSION ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}
@@ -2784,7 +2786,7 @@ foreach(component ${LLVM_EXTRA_DISTRIBUTION_COMPONENTS})
     )
 endforeach()
 
-set(esp_clang_libs_version ${ESP_TOOLCHAIN_VER})
+set(esp_clang_libs_version ${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER})
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/esp-helper.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/llvm/bin/esp-helper.py
@@ -2825,8 +2827,8 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
     # So to have the same top dir name in archives for every supported platform we configure CPack 
     # to generate archive ${CPACK_PACKAGE_NAME}.tar.xz with ${CPACK_PACKAGE_NAME} as top dir in it. 
     # After that we rename it using ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME} format.
-    set(binary_package_name ${CPACK_PACKAGE_NAME}-${ESP_TOOLCHAIN_VER}-${CPACK_SYSTEM_NAME})
-    # Both CPACK_PACKAGE_NAME and ESP_TOOLCHAIN_VER starts with 'esp-', so remove leading prefix coming from CPACK_PACKAGE_NAME
+    set(binary_package_name ${CPACK_PACKAGE_NAME}-${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}-${CPACK_SYSTEM_NAME})
+    # Both CPACK_PACKAGE_NAME and LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER starts with 'esp-', so remove leading prefix coming from CPACK_PACKAGE_NAME
     # to avoid double 'esp-' in filename
     string(REGEX REPLACE "^esp-" "" binary_package_name "${binary_package_name}")
     set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
