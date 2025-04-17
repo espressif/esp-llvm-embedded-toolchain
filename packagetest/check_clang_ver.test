@@ -1,0 +1,5 @@
+# REQUIRES: target={{.*}}-esp-elf
+
+# RUN: %unpack_directory/bin/clang --config rv32imac-zicsr-zifencei_ilp32_no-rtti.cfg --version 2>&1 | FileCheck %s
+
+# CHECK: Espressif clang version {{[0-9]+\.[0-9]+\.[0-9]+}} ({{.+}}/llvm-project.git esp-19.1.2_20250225)
