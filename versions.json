@@ -17,11 +17,11 @@
     },
     "newlib": {
       "tagType": "tag",
-      "tag": "esp-4.3.0_20240322"
+      "tag": "esp-4.3.0_20241119"
     },
     "binutils-gdb": {
       "tagType": "tag",
-      "tag": "esp-2.41.0_20240305"
+      "tag": "esp-2.43.1_20241119"
     },
     "xtensa-overlays": {
       "tagType": "branch",

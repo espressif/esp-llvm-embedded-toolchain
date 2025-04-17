@@ -192,8 +192,18 @@ option(
 )
 
 set(LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER
-    "13.2.0_20230928" CACHE STRING
+    "14.2.0_20241119" CACHE STRING
     "ESP GNU toolchain version to pick libgcc and libstdc++."
+)
+
+set(LLVM_TOOLCHAIN_ESP_RISCV_GNU_TOOLCHAIN_HASH
+    "75923baf795acd438cfa1ee0fa8a7c74" CACHE STRING
+    "MD5 sum for ESP RISCV GNU toolchain distro archive file."
+)
+
+set(LLVM_TOOLCHAIN_ESP_XTENSA_GNU_TOOLCHAIN_HASH
+    "89a79ac3c0805adf49cb10142b04ca3b" CACHE STRING
+    "MD5 sum for ESP Xtensa GNU toolchain distro archive file."
 )
 
 if(LLVM_TOOLCHAIN_ESPRESSIF)
@@ -508,12 +518,12 @@ FetchContent_Declare(newlib
 # Currently ESP toolchain picks libgcc and libstdc++ libraries from GNU toolchain
 FetchContent_Declare(esp_riscv32_gnu_toolchain
     URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}/riscv32-esp-elf-${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
-    URL_HASH MD5=8f2c02098e6ceff0f7076d5c35d84418
+    URL_HASH MD5=${LLVM_TOOLCHAIN_ESP_RISCV_GNU_TOOLCHAIN_HASH}
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
 )
 FetchContent_Declare(esp_xtensa_gnu_toolchain
     URL      https://github.com/espressif/crosstool-NG/releases/download/esp-${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}/xtensa-esp-elf-${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}-x86_64-linux-gnu.tar.xz
-    URL_HASH MD5=fd79ffe2484dbe2a0b8ff8d096ad5a81
+    URL_HASH MD5=${LLVM_TOOLCHAIN_ESP_XTENSA_GNU_TOOLCHAIN_HASH}
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
 )
 
