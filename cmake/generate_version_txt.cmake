@@ -31,6 +31,22 @@ if(NOT (LLVM_TOOLCHAIN_C_LIBRARY STREQUAL llvmlibc)) # libc in a separate repo?
         COMMAND_ERROR_IS_FATAL ANY
     )
 endif()
+if(NOT "${binutils_SOURCE_DIR}" STREQUAL "")
+    execute_process(
+        COMMAND git -C ${binutils_SOURCE_DIR} rev-parse HEAD
+        OUTPUT_VARIABLE binutils_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endif()
+if(NOT "${xtensa_overlays_SOURCE_DIR}" STREQUAL "")
+    execute_process(
+        COMMAND git -C ${xtensa_overlays_SOURCE_DIR} rev-parse HEAD
+        OUTPUT_VARIABLE xtensa_overlays_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endif()
 
 configure_file(
     ${CMAKE_CURRENT_LIST_DIR}/VERSION.txt.in
