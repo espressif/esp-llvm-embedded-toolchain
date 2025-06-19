@@ -1,8 +1,8 @@
-// ESP_TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
+// ESP_TODO: LLVM-250. Have to use '--rtlib=libgcc --unwindlib=none' until 'libnunwind' is supported.
 
 // RUN: %if target={{.*}}-esp-elf  \
 // RUN:   %{ \
-// RUN:     %clangxx --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc %s -o %t.out && \
+// RUN:     %clangxx --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc --unwindlib=none %s -o %t.out && \
 // RUN:     qemu-riscv32 -cpu rv32 %t.out 2>&1 | FileCheck %s \
 // RUN:   %} \
 // RUN: %else \

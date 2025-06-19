@@ -64,6 +64,7 @@ def main():  # type: () -> None
     clang_path = os.path.join(args.distro_path, "bin", "clang")
     clang_config = "rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg"
     cflags = "-Wno-implicit-function-declaration -Wno-implicit-int -Wno-int-conversion"
+    cflags += " -lm"
     for fname in test_files:
         outfile = f"{args.temp_path_prefix}.{os.path.basename(fname)}.out"
         clang_cmd = f"{clang_path} --config {clang_config} {cflags} {fname} -o {outfile}"

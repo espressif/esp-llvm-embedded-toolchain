@@ -2,9 +2,9 @@ include ../../Makefile.conf
 
 build: hello.elf
 
-# TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
+# TODO: LLVM-250. Have to use '--rtlib=libgcc --unwindlib=none' until 'libnunwind' is supported.
 hello.elf: *.cpp
-	$(BIN_PATH)/clang++ --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc -g -o hello.elf $^
+	$(BIN_PATH)/clang++ --config rv32imac-zicsr-zifencei_ilp32_no-rtti_qemu_semihost.cfg --rtlib=libgcc --unwindlib=none -g -o hello.elf $^
 
 run: hello.elf
 	qemu-riscv32 -cpu rv32 $<
