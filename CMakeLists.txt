@@ -2066,6 +2066,8 @@ function(
         -DLLVM_DISTRIBUTION_COMPONENTS=${LLVM_DISTRIBUTION_COMPONENTS_comma}
         -DLLVM_DEFAULT_TARGET_TRIPLE=${LLVM_DEFAULT_TARGET_TRIPLE}
         -DLLVM_LINK_LLVM_DYLIB=${dylib_enab}
+        -DLLVM_BUILD_LLVM_DYLIB=${dylib_enab}
+        # -DLLVM_BUILD_LLVM_DYLIB_VIS=${dylib_enab}
         -DCLANG_LINK_CLANG_DYLIB=${dylib_enab}
         -DLLVM_ENABLE_PROJECTS=${LLVM_ENABLE_PROJECTS_comma}
         -DLLVM_TABLEGEN=${LLVM_BINARY_DIR}/bin/llvm-tblgen${CMAKE_EXECUTABLE_SUFFIX}
@@ -2113,17 +2115,21 @@ function(
     # Copy MinGW runtime DLLs
     foreach(mingw_runtime_dll
         libwinpthread-1.dll # POSIX thread API implementation
-        libgcc_s_seh-1.dll  # GCC runtime
-        libstdc++-6.dll     # C++ Standard Library
+        # libgcc_s_seh-1.dll  # GCC runtime
+        # libstdc++-6.dll     # C++ Standard Library
+        libomp.dll
+        libclang_rt.asan_dynamic-x86_64.dll # clang runtime
+        libunwind.dll     # unwinder lib
+        libc++.dll     # C++ Standard Library
     )
-        execute_process(
-            COMMAND ${MINGW_C_EXECUTABLE} -print-file-name=${mingw_runtime_dll}
-            OUTPUT_VARIABLE mingw_runtime_dll
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            COMMAND_ERROR_IS_FATAL ANY
-        )
+        # execute_process(
+        #     COMMAND ${MINGW_C_EXECUTABLE} -print-file-name=${mingw_runtime_dll}
+        #     OUTPUT_VARIABLE mingw_runtime_dll
+        #     OUTPUT_STRIP_TRAILING_WHITESPACE
+        #     COMMAND_ERROR_IS_FATAL ANY
+        # )
         install(
-            FILES ${mingw_runtime_dll}
+            FILES ${MINGW_SYSROOT}/bin/${mingw_runtime_dll}
             TYPE BIN
             COMPONENT llvm-${distro_name}-mingw
         )
@@ -2165,8 +2171,10 @@ function(
 endfunction()
 
 if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
-    find_program(MINGW_C_EXECUTABLE x86_64-w64-mingw32-gcc-posix REQUIRED)
-    find_program(MINGW_CXX_EXECUTABLE x86_64-w64-mingw32-g++-posix REQUIRED)
+    # find_program(MINGW_C_EXECUTABLE x86_64-w64-mingw32-gcc-posix REQUIRED)
+    # find_program(MINGW_CXX_EXECUTABLE x86_64-w64-mingw32-g++-posix REQUIRED)
+    find_program(MINGW_C_EXECUTABLE x86_64-w64-mingw32-clang REQUIRED)
+    find_program(MINGW_CXX_EXECUTABLE x86_64-w64-mingw32-clang++ REQUIRED)
     cmake_path(SET MINGW_SYSROOT NORMALIZE "${MINGW_C_EXECUTABLE}/../../x86_64-w64-mingw32")
 
     add_llvm_mingw(toolchain "${LLVM_Toolchain_DISTRIBUTION_COMPONENTS}")
