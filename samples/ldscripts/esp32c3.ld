@@ -160,6 +160,7 @@ SECTIONS
   {
     . = ALIGN(4);
     __eh_frame_hdr = ABSOLUTE(.);
+    __eh_frame_hdr_start = ABSOLUTE(.);
 
     KEEP (*(.eh_frame_hdr)) *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*)
 
@@ -172,6 +173,7 @@ SECTIONS
   {
     . = ALIGN(4);
     __eh_frame = ABSOLUTE(.);
+    __eh_frame_start = ABSOLUTE(.);
 
     KEEP (*(.eh_frame)) *(.eh_frame.*)
     /**
@@ -193,7 +195,7 @@ SECTIONS
     PROVIDE(__global_pointer$ = . + 0x800);
     *(.srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2) *(.srodata .srodata.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
-    _edata = .; PROVIDE (edata = .);
+    _edata = .; /*PROVIDE (edata = .);*/
     . = .;
   } > dram_seg
 
@@ -215,7 +217,24 @@ SECTIONS
 
     . = ALIGN(32 / 8);
     . = ALIGN(32 / 8);
-    _end = .; PROVIDE (end = .);
+    __bss_end = .;/* PROVIDE (end = .);*/
+  } > dram_seg
+
+  .tdata :
+  {
+    _tdata_begin = .;
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    _tdata_end = .;
+  } > dram_seg
+
+  .tbss (NOLOAD) :
+  {
+    _tbss_start = .;
+    *(.tbss .tbss.* .gnu.linkonce.tb.*)
+    *(.tcommon .tcommon.*)
+    _tbss_end = .;
+    /* put _end after data sections, it will be used by _sbrk to alloc memory */
+    _end = .;
   } > dram_seg
 
   /* Check if data + heap + stack exceeds RAM limit */

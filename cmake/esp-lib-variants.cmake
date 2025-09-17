@@ -17,7 +17,7 @@ function(add_esp_library_variants_for_cpu target_arch)
         STACK_SIZE
     )
     cmake_parse_arguments(VARIANT "" "${one_value_args}" "" ${ARGN})
-
+   
     foreach(enable_rtti IN ITEMS ON OFF)
         set(SUFFIXES)
         if(VARIANT_SUFFIX)
@@ -36,6 +36,7 @@ function(add_esp_library_variants_for_cpu target_arch)
             PICOLIBC_BUILD_TYPE "${VARIANT_PICOLIBC_BUILD_TYPE}"
             QEMU_MACHINE "${VARIANT_QEMU_MACHINE}"
             QEMU_CPU "${VARIANT_QEMU_CPU}"
+            # redirect qemu log, otherwise some output-sensitive tests fail
             QEMU_PARAMS "${VARIANT_QEMU_PARAMS}"
             BOOT_FLASH_ADDRESS "${VARIANT_BOOT_FLASH_ADDRESS}"
             BOOT_FLASH_SIZE "${VARIANT_BOOT_FLASH_SIZE}"

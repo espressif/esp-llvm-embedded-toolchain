@@ -1,7 +1,7 @@
 # RUN: %if target={{.*}}-esp-elf  \
 # RUN:   %{ \
 # RUN:     make -f Makefile.riscv32 -C %samples_dir/src/baremetal-semihosting clean && \
-# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/baremetal-semihosting run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/baremetal-semihosting run BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck -check-prefix=RISCV %s && \
 # RUN:     make -f Makefile.riscv32 -C %samples_dir/src/baremetal-semihosting clean \
 # RUN:     && \
 # RUN:     make -f Makefile.xtensa -C %samples_dir/src/baremetal-semihosting clean && \
@@ -15,4 +15,5 @@
 # RUN:     make -C %samples_dir/src/baremetal-semihosting clean \
 # RUN:   %}
 
+# RISCV: Hello World!
 # CHECK: Hello World!

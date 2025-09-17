@@ -1,8 +1,10 @@
 # RUN: %if target={{.*}}-esp-elf  \
 # RUN:   %{ \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting run STDLIB=libc++ BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck %s && \
 # COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean && \
-# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s && \
-# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean \
+# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting run STDLIB=libstdc++ BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck -check-prefix=LIBSTDCXX %s && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting clean \
 # RUN:   %} \
 # RUN: %else \
 # RUN:   %{ \
@@ -12,3 +14,4 @@
 # RUN:   %}
 
 # CHECK: 1 2 3 4 5
+# LIBSTDCXX: 1 2 3 4 5

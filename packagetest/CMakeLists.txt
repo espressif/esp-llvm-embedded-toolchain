@@ -13,6 +13,10 @@ else()
     set(samples_dir ${CMAKE_CURRENT_SOURCE_DIR}/../samples)
 endif()
 
+if(LLVM_TOOLCHAIN_ESPRESSIF)
+  set(test_support_bin_dir ${esp_test_support_install_dir})
+endif()
+
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py
@@ -26,6 +30,13 @@ list(APPEND LLVM_TOOLCHAIN_PACKAGE_TEST_DEPS
   count
   not
 )
+
+if(LLVM_TOOLCHAIN_ESPRESSIF)
+  # need libcrt1-sim-test.a for package tests
+  list(APPEND LLVM_TOOLCHAIN_PACKAGE_TEST_DEPS
+    esp-test-support-libs
+  )
+endif()
 
 add_lit_testsuite(check-package-llvm-toolchain
   "Running LLVM Embedded Toolchain for Arm package tests"

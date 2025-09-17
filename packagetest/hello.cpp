@@ -1,8 +1,8 @@
-// ESP_TODO: LLVM-250. Have to use '--rtlib=libgcc' until 'libnunwind' is supported.
-
 // RUN: %if target={{.*}}-esp-elf  \
 // RUN:   %{ \
-// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --rtlib=libgcc --unwindlib=none -nostartfiles -lcrt1-sim -lsemihost -lpthread_stubs -T %S/Inputs/esp32c3.ld %s -o %t.out && \
+// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --stdlib=libstdc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
+// RUN:     qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel %t.out 2>&1 | FileCheck -check-prefix=LIBSTDCXX %s && \
+// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --stdlib=libc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
 // RUN:     qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel %t.out 2>&1 | FileCheck %s \
 // RUN:   %} \
 // RUN: %else \
@@ -107,20 +107,4 @@ int main(void) {
     std::cout << str << std::endl; // CHECK: Hello World!
     return 0;
 }
-
-extern "C" 
-{
-
-#ifndef _GLIBCXX_HAVE_ATOMIC_LOCK_POLICY
-int pthread_mutex_lock (pthread_mutex_t *__mutex) {
-  return 0;
-}
-int pthread_mutex_unlock (pthread_mutex_t *__mutex) {
-  return 0;
-}
-int pthread_cond_broadcast (pthread_cond_t *__cond) {
-  return 0;
-}
-#endif
-
-}
+// LIBSTDCXX: Hello World!

@@ -946,16 +946,17 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
     set(newlib_specific_runtimes_options
         -DLIBCXXABI_ENABLE_EXCEPTIONS=ON
         -DLIBCXXABI_ENABLE_THREADS=ON
-        -DLIBCXXABI_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++abi-newlib.cfg.in
+        -DLIBCXXABI_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support/llvm-libc++abi-newlib.cfg.in
         -DLIBCXX_ENABLE_EXCEPTIONS=ON
         -DLIBCXX_ENABLE_MONOTONIC_CLOCK=ON
         -DLIBCXX_ENABLE_RANDOM_DEVICE=OFF
         -DLIBCXX_ENABLE_THREADS=ON
         -DLIBCXX_HAS_PTHREAD_API=ON
         -DLIBCXX_ENABLE_WIDE_CHARACTERS=ON
-        -DLIBCXX_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libc++-newlib.cfg.in
+        -DLIBCXX_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support/llvm-libc++-newlib.cfg.in
         -DLIBUNWIND_ENABLE_THREADS=ON
-        -DLIBUNWIND_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/test-support/llvm-libunwind-newlib.cfg.in
+        -DLIBUNWIND_TEST_CONFIG=${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support/llvm-libunwind-newlib.cfg.in
+        -DESPRESSIF=ON
     )
 else()
     set(newlib_specific_runtimes_options
@@ -968,6 +969,15 @@ else()
         -DLIBUNWIND_ENABLE_THREADS=OFF
 )
 endif()
+
+if(LLVM_TOOLCHAIN_ESPRESSIF)
+    set(esp_test_support_install_dir ${CMAKE_CURRENT_BINARY_DIR}/esp_test_support_install)
+endif()
+
+add_custom_target(
+    print-unpack-directory
+    COMMAND "${CMAKE_COMMAND}" -E echo "${unpack_directory}"
+)
 
 if(LLVM_TOOLCHAIN_LIBRARY_OVERLAY_INSTALL)
     # If we're building a non-default libc with the intention of
@@ -1562,160 +1572,6 @@ macro(
     endif()
 endmacro()
 
-function(
-    add_esp_newlib
-    directory
-    variant
-    host_triple
-    target_triple
-    flags
-    test_executor
-)
-    if(CMAKE_INSTALL_MESSAGE STREQUAL NEVER)
-        # set(MESON_INSTALL_QUIET "--quiet")
-    endif()
-
-    if(variant MATCHES "_nano$")
-        list(APPEND config_opts
-            --disable-multilib
-            --with-newlib
-            --disable-newlib-io-c99-formats
-            --disable-newlib-supplied-syscalls --enable-newlib-nano-formatted-io
-            --enable-newlib-reent-small
-            --enable-target-optspace --enable-newlib-nano-malloc
-            --enable-newlib-retargetable-locking --disable-newlib_wide_orient
-            --enable-newlib-iconv --enable-newlib-reent-binary-compat
-        )
-    else()
-        list(APPEND config_opts
-            --disable-multilib
-            --enable-newlib-io-float --disable-newlib-io-long-double
-            --disable-newlib-supplied-syscalls --enable-newlib-io-pos-args
-            --enable-newlib-io-c99-formats --enable-newlib-io-long-long
-            --disable-newlib-register-fini --enable-newlib-nano-malloc
-            --disable-newlib-nano-formatted-io --enable-newlib-atexit-dynamic-alloc
-            --enable-newlib-global-atexit --disable-lite-exit --enable-newlib-reent-small
-            --enable-newlib-multithread --enable-newlib-retargetable-locking
-            --disable-newlib-wide-orient --enable-newlib-fseek-optimization
-            --enable-newlib-fvwrite-in-streamio --enable-newlib-unbuf-stream-opt
-            --enable-target-optspace
-            --enable-newlib-iconv --enable-newlib-reent-binary-compat
-        )
-    endif()
-
-    set(newlib_src_dir ${newlib_SOURCE_DIR})
-
-    if(target_triple MATCHES "^riscv32")
-        set(cpu generic-rv32)
-        set(binutils_target_triple ${target_triple})
-    elseif(target_triple MATCHES "^xtensa-esp")
-        get_xtensa_cpu(${variant} cpu)
-        get_legacy_xtensa_target_triple(${variant} binutils_target_triple)
-    else()
-        message(FATAL_ERROR "Unsupported target triple ${target_triple}")
-    endif()
-
-    # Force using DWARF v4 because current version of GCC assembler does not support DWARF v5,
-    # which is default for Clang 14.
-    # Clang 15 has tighten the rules for '-Wimplicit-function-declaration' (https://reviews.llvm.org/rG7d644e1215b3)
-    # and '-Wint-conversion' (https://reviews.llvm.org/rG7068aa98412a)
-    set(extra_cflags_for_target "-fdebug-default-version=4 -Wno-implicit-function-declaration -Wno-int-conversion")
-    # avoid spurious "warning: argument unused during compilation: '-L/mnt/host/projects/esp/newlib-cygwin/libgloss/riscv32' [-Wunused-command-line-argument]""
-    set(extra_cflags_for_target "${extra_cflags_for_target} -Wno-unused-command-line-argument")
-
-    # Target and cpu flags have to be passed as part of CC_FOR_TARGET, since newlib
-    # will use "$(CC_FOR_TARGET) -print-multi-lib" to determine the multilib set,
-    # and the set depends on the target and CPU.
-    set(cxx_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang++${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
-    set(cc_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
-    set(gcc_for_target "${CMAKE_C_COMPILER_LAUNCHER} ${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX} --target=${target_triple} -mcpu=${cpu}")
-    set(cflags_for_target "${flags} -ffreestanding -O2 -g -ffunction-sections -fdata-sections ${extra_cflags_for_target}")
-
-    ExternalProject_Add(
-        newlib_${variant}
-        SOURCE_DIR ${newlib_src_dir}
-        INSTALL_DIR "${LLVM_BINARY_DIR}/${directory}"
-        PREFIX newlib_${variant}
-        DEPENDS clang lld llvm-ar llvm-config llvm-nm llvm-ranlib llvm-strip llvm-readelf
-        CONFIGURE_COMMAND 
-            env CFLAGS_FOR_TARGET=${cflags_for_target}
-            env GCC_FOR_TARGET=${gcc_for_target} 
-            env CC_FOR_TARGET=${cc_for_target} 
-            env CXX_FOR_TARGET=${cxx_for_target}
-            env LD_FOR_TARGET=${LLVM_BINARY_DIR}/bin/lld${CMAKE_EXECUTABLE_SUFFIX}
-            env AR_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-ar${CMAKE_EXECUTABLE_SUFFIX}
-            env RANLIB_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-ranlib${CMAKE_EXECUTABLE_SUFFIX}
-            env READELF_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-readelf${CMAKE_EXECUTABLE_SUFFIX}
-            env STRIP_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-strip${CMAKE_EXECUTABLE_SUFFIX}
-            ${newlib_src_dir}/configure --host=${host_triple} --target=${target_triple} --prefix=<INSTALL_DIR> ${config_opts}
-        BUILD_COMMAND make -j${MAKE_JOBS_NUM}
-        INSTALL_COMMAND make install
-        USES_TERMINAL_CONFIGURE TRUE
-        USES_TERMINAL_BUILD TRUE
-        USES_TERMINAL_TEST TRUE
-        # LIST_SEPARATOR " "
-        # Always run the build command so that incremental builds are correct.
-        BUILD_ALWAYS TRUE
-        # CONFIGURE_HANDLED_BY_BUILD TRUE
-    )
-
-    ExternalProject_Get_property(newlib_${variant} INSTALL_DIR)
-    if(LLVM_TOOLCHAIN_ESPRESSIF AND variant MATCHES "_nano$")
-        set(nano_variant_install_dir ${INSTALL_DIR})
-        string(REGEX REPLACE "_nano$" "" non_nano_variant ${variant})
-        ExternalProject_Get_property(newlib_${non_nano_variant} INSTALL_DIR)
-        ExternalProject_Add_Step(
-            newlib_${variant}
-            post-install
-            # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step <INSTALL_DIR>/${target_triple}/lib/lib{c,g,m} -> ${INSTALL_DIR}/nano"
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/lib/nano
-            COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/${target_triple}/lib/libc.a
-                                             <INSTALL_DIR>/${target_triple}/lib/libm.a
-                                             <INSTALL_DIR>/${target_triple}/lib/libg.a
-                                             ${INSTALL_DIR}/lib/nano/
-            DEPENDEES install
-            ALWAYS TRUE
-            USES_TERMINAL TRUE
-        )
-        ExternalProject_Add_StepDependencies(
-            newlib_${variant}
-            post-install
-            newlib_${non_nano_variant}-post-install
-        )
-    else()
-        ExternalProject_Add_Step(
-            newlib_${variant}
-            post-install
-            # newlib build system installs libs and headers to <INSTALL_DIR>/$TARGET, we want them to be in <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E echo "Post-install step ${INSTALL_DIR}/${target_triple}/* -> ${INSTALL_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different <INSTALL_DIR>/${target_triple} <INSTALL_DIR>
-            COMMAND ${CMAKE_COMMAND} -E rm -rf <INSTALL_DIR>/${target_triple}
-            DEPENDEES install
-            ALWAYS TRUE
-            USES_TERMINAL TRUE
-        )
-        ExternalProject_Add_StepTargets(
-            newlib_${variant}
-            post-install
-        )
-    endif()
-
-    add_dependencies(
-        llvm-toolchain-runtimes
-        newlib_${variant}
-    )
-
-    if(LLVM_TOOLCHAIN_ESPRESSIF)
-        message(STATUS "Add dep newlib_${variant} -> binutils_${binutils_target_triple}")
-        add_dependencies(
-            newlib_${variant}
-            binutils_${binutils_target_triple}
-        )
-    endif()
-
-endfunction()
-
 function(get_runtimes_flags directory flags)
     set(runtimes_flags "${flags} -ffunction-sections -fdata-sections -fno-ident --sysroot ${LLVM_BINARY_DIR}/${directory}" PARENT_SCOPE)
 endfunction()
@@ -1763,20 +1619,17 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
             set(compiler_rt_test_flags "${compiler_rt_test_flags} -fomit-frame-pointer")
         endif()
     elseif(LLVM_TOOLCHAIN_C_LIBRARY STREQUAL newlib)
-        set(compiler_rt_test_flags "${runtimes_flags} -nostartfiles -lcrt1-sim -lpthread_stubs")
-        # message(WARNING "compiler_rt_test_flags=(${compiler_rt_test_flags})")
+        set(compiler_rt_test_flags "${runtimes_flags} -nostartfiles -lpthread_stubs")
         if(target_triple MATCHES "^riscv32-esp-elf")
             # TODO: Update linker script in newlib
-            # set(compiler_rt_test_flags "${compiler_rt_test_flags} -lsemihost -lpthread_stubs -T ${CMAKE_CURRENT_SOURCE_DIR}/packagetest/Inputs/esp32c3.ld")
-            set(compiler_rt_test_flags "${compiler_rt_test_flags} -lsemihost -T ${CMAKE_CURRENT_SOURCE_DIR}/packagetest/Inputs/esp32c3.ld")
+            set(compiler_rt_test_flags "${compiler_rt_test_flags} -lsemihost -lcrt1_sim_test -L ${esp_test_support_install_dir}/${variant}/lib -T ${CMAKE_CURRENT_SOURCE_DIR}/packagetest/Inputs/esp32c3.ld")
         elseif(target_triple MATCHES "^xtensa-esp-elf")
-            set(compiler_rt_test_flags "${compiler_rt_test_flags} --for-linker=--whole-archive --for-linker=-lgloss --for-linker=-lsys_qemu --for-linker=--no-whole-archive -T memory.elf.ld -T app.elf.ld")
+            set(compiler_rt_test_flags "${compiler_rt_test_flags} -lcrt1-sim --for-linker=--whole-archive --for-linker=-lgloss --for-linker=-lsys_qemu --for-linker=--no-whole-archive -T memory.elf.ld -T app.elf.ld")
             get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
             set(compiler_rt_test_flags "${compiler_rt_test_flags} --ld-path=${xtensa_target_triple}-clang-ld")
         else()
             message(FATAL_ERROR "compiler-rt+newlib tests are not supported for '${target_triple}' target!")
-        endif()
-        # message(WARNING "compiler_rt_test_flags2=(${compiler_rt_test_flags})")
+            endif()
     endif()
 
     ExternalProject_Add(
@@ -1892,7 +1745,9 @@ function(
         # Let CMake know we're cross-compiling
         -DCMAKE_SYSTEM_NAME=Generic
         -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
-        -DLIBC_LINKER_SCRIPT=picolibcpp.ld
+        # TODO:
+        # -DLIBC_LINKER_SCRIPT=picolibcpp.ld
+        -DLIBC_LINKER_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support/ldscripts/esp32c3.ld
         -DLIBCXXABI_BAREMETAL=ON
         -DLIBCXXABI_ENABLE_ASSERTIONS=OFF
         -DLIBCXXABI_ENABLE_SHARED=OFF
@@ -1903,22 +1758,26 @@ function(
         -DLIBCXXABI_TEST_PARAMS=executor=${test_executor}
         -DLIBCXX_ABI_UNSTABLE=ON
         -DLIBCXX_CXX_ABI=libcxxabi
+        # TODO: enable
         -DLIBCXX_ENABLE_FILESYSTEM=OFF
         -DLIBCXX_ENABLE_SHARED=OFF
         -DLIBCXX_ENABLE_STATIC=ON
         -DLIBCXX_INCLUDE_BENCHMARKS=OFF
         -DLIBCXX_TEST_PARAMS=executor=${test_executor}
+        -DLIBCXX_TEST_EXCLUDE_FILE=${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support/libcxx_test.exclude
         -DLIBUNWIND_ENABLE_ASSERTIONS=OFF
         -DLIBUNWIND_ENABLE_SHARED=OFF
         -DLIBUNWIND_ENABLE_STATIC=ON
         -DLIBUNWIND_IS_BAREMETAL=ON
         -DLIBUNWIND_REMEMBER_HEAP_ALLOC=ON
         -DLIBUNWIND_USE_COMPILER_RT=ON
+        -DLIBUNWIND_ENABLE_FRAME_APIS=ON
         -DLIBUNWIND_TEST_PARAMS=executor=${test_executor}
         -DLLVM_LIT_ARGS=${LLVM_LIT_ARGS}
         -DLLVM_ENABLE_RUNTIMES=libcxxabi,libcxx,libunwind
         -DRUNTIME_TEST_ARCH_FLAGS=${flags}
         -DRUNTIME_VARIANT_NAME=${variant}
+        -DTEST_SUPPORT_BIN_DIR=${esp_test_support_install_dir}
         ${extra_cmake_options}
         STEP_TARGETS build
         USES_TERMINAL_CONFIGURE FALSE
@@ -1935,6 +1794,63 @@ function(
         llvm-toolchain-runtimes
         ${target_name}
     )
+endfunction()
+
+add_custom_target(esp-test-support-libs)
+
+function(
+    add_esp_test_support
+    directory
+    variant
+    target_triple
+    flags
+    libc_target
+)
+    get_runtimes_flags("${directory}" "${flags}")
+
+    set(common_cmake_args
+        -DCMAKE_AR=${LLVM_BINARY_DIR}/bin/llvm-ar${CMAKE_EXECUTABLE_SUFFIX}
+        -DCMAKE_ASM_COMPILER=${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX}
+        -DCMAKE_ASM_COMPILER_TARGET=${target_triple}
+        -DCMAKE_ASM_FLAGS=${runtimes_flags}
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_CXX_COMPILER=${LLVM_BINARY_DIR}/bin/clang++${CMAKE_EXECUTABLE_SUFFIX}
+        -DCMAKE_CXX_COMPILER_TARGET=${target_triple}
+        -DCMAKE_CXX_FLAGS=${runtimes_flags}
+        -DCMAKE_C_COMPILER=${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX}
+        -DCMAKE_C_COMPILER_TARGET=${target_triple}
+        -DCMAKE_C_FLAGS=${runtimes_flags}
+        -DCMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE}
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_NM=${LLVM_BINARY_DIR}/bin/llvm-nm${CMAKE_EXECUTABLE_SUFFIX}
+        -DCMAKE_RANLIB=${LLVM_BINARY_DIR}/bin/llvm-ranlib${CMAKE_EXECUTABLE_SUFFIX}
+        # Let CMake know we're cross-compiling
+        -DCMAKE_SYSTEM_NAME=Generic
+        -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+    )
+
+    if(target_triple MATCHES "^riscv32")
+        list(APPEND common_cmake_args -DRISCV=ON)
+    endif()
+
+    ExternalProject_Add(
+        esp-test-support_${variant}
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/esp-test-support
+        PREFIX esp-test-support/${variant}
+        INSTALL_DIR ${esp_test_support_install_dir}/${variant}
+        DEPENDS ${lib_tool_dependencies} ${libc_target}
+        CMAKE_ARGS ${common_cmake_args}
+        STEP_TARGETS build install
+        USES_TERMINAL_CONFIGURE FALSE
+        USES_TERMINAL_BUILD TRUE
+        USES_TERMINAL_INSTALL TRUE
+        USES_TERMINAL_TEST TRUE
+        LIST_SEPARATOR ,
+        # Always run the build command so that incremental builds are correct.
+        BUILD_ALWAYS TRUE
+        CONFIGURE_HANDLED_BY_BUILD TRUE
+    )
+    add_dependencies(esp-test-support-libs esp-test-support_${variant}-install)
 endfunction()
 
 function(add_compiler_rt_tests variant target_triple)
@@ -1969,12 +1885,18 @@ function(add_compiler_rt_tests variant target_triple)
         if(target_triple MATCHES "^xtensa-esp-elf")
             get_legacy_xtensa_target_triple(${variant} xtensa_target_triple)
             add_dependencies(
-                check-compiler-rt-${variant}
+                compiler_rt_${variant}-check-compiler-rt
                 binutils_${xtensa_target_triple}
-            )    
+            )
+        elseif(target_triple MATCHES "^riscv32-esp-elf")
+            # need libcrt1-sim-test.a to build tests
+            add_dependencies(
+                compiler_rt_${variant}-check-compiler-rt
+                esp-test-support_${variant}-install
+            )
         endif()
         add_dependencies(
-            check-compiler-rt-${variant}
+            compiler_rt_${variant}-check-compiler-rt
             newlib_${variant}-post-install
         )    
     endif()
@@ -2002,6 +1924,13 @@ function(add_libcxx_libcxxabi_libunwind_tests variant)
         add_dependencies(${check_target}-${variant_with_extensions} ${target_name}-${check_target})
         add_dependencies(${check_target} ${target_name}-${check_target})
         add_dependencies(check-llvm-toolchain-runtimes-${variant} ${check_target}-${variant_with_extensions})
+        if(LLVM_TOOLCHAIN_ESPRESSIF AND target_arch MATCHES "^rv32")
+            # need libcrt1-sim-test.a to build tests
+            add_dependencies(
+                ${target_name}-${check_target}
+                esp-test-support_${variant}-install
+            )
+        endif()
     endforeach()
 endfunction()
 
@@ -2169,17 +2098,20 @@ function(add_library_variant target_arch)
             )
         endif()
         if(CXX_LIBS AND "libcxx" IN_LIST LLVM_TOOLCHAIN_CXX_LIBRARIES)
-            add_libcxx_libcxxabi_libunwind(
-                "${directory}"
-                "${variant}"
-                "${target_triple}"
-                "${VARIANT_COMPILE_FLAGS}"
-                "${lit_test_executor}"
-                "${LLVM_TOOLCHAIN_C_LIBRARY}_${variant}-install"
-                "${${LLVM_TOOLCHAIN_C_LIBRARY}_specific_runtimes_options}"
-                ${VARIANT_ENABLE_EXCEPTIONS}
-                ${VARIANT_ENABLE_RTTI}
-            )
+            # TODO: LLVM-110
+            if(NOT LLVM_TOOLCHAIN_ESPRESSIF OR NOT target_arch MATCHES "^esp32")
+                add_libcxx_libcxxabi_libunwind(
+                        "${directory}"
+                        "${variant}"
+                        "${target_triple}"
+                        "${VARIANT_COMPILE_FLAGS}"
+                        "${lit_test_executor}"
+                        "${LLVM_TOOLCHAIN_C_LIBRARY}_${variant}-install"
+                        "${${LLVM_TOOLCHAIN_C_LIBRARY}_specific_runtimes_options}"
+                        ${VARIANT_ENABLE_EXCEPTIONS}
+                        ${VARIANT_ENABLE_RTTI}
+                    )
+            endif()
         endif()
         if("libstdcxx" IN_LIST LLVM_TOOLCHAIN_CXX_LIBRARIES)
             add_libstdcxx(
@@ -2189,7 +2121,16 @@ function(add_library_variant target_arch)
                 "${target_triple}"
             )
         endif()
-        if(VARIANT_COMPILE_FLAGS MATCHES "-march=armv8")
+        if(LLVM_TOOLCHAIN_ESPRESSIF AND target_arch MATCHES "^rv32")
+            add_esp_test_support(
+                "${directory}"
+                "${variant}"
+                "${target_triple}"
+                "${VARIANT_COMPILE_FLAGS}"
+                "${LLVM_TOOLCHAIN_C_LIBRARY}_${variant}-install"
+            )
+        endif()
+        if(VARIANT_COMPILE_FLAGS MATCHES "-march=armv8" AND NOT LLVM_TOOLCHAIN_ESPRESSIF AND NOT target_arch MATCHES "^esp32")
             message("C++ runtime libraries tests disabled for ${variant}")
         else()
             add_custom_target(check-llvm-toolchain-runtimes-${variant})
@@ -2197,8 +2138,11 @@ function(add_library_variant target_arch)
             if("compiler-rt" IN_LIST LLVM_TOOLCHAIN_RT_LIBRARIES AND NOT ${VARIANT_QEMU_MACHINE} STREQUAL "")
                 add_compiler_rt_tests("${variant}" "${target_triple}")
             endif()
-            if(CXX_LIBS AND "libcxx" IN_LIST LLVM_TOOLCHAIN_CXX_LIBRARIES)
-                add_libcxx_libcxxabi_libunwind_tests("${variant}")
+            if(CXX_LIBS AND "libcxx" IN_LIST LLVM_TOOLCHAIN_CXX_LIBRARIES AND NOT ${VARIANT_QEMU_MACHINE} STREQUAL "")
+                # TODO: LLVM-110
+                if(NOT LLVM_TOOLCHAIN_ESPRESSIF OR NOT target_arch MATCHES "^esp32")
+                    add_libcxx_libcxxabi_libunwind_tests("${variant}")
+                endif()
             endif()
         endif()
     endif()

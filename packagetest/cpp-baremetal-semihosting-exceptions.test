@@ -1,9 +1,11 @@
 
 # RUN: %if target={{.*}}-esp-elf  \
 # RUN:   %{ \
-# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean && \
-# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s && \
-# COM:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions run STDLIB=--stdlib=libc++ BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck -check-prefix=LIBCXX %s && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions run BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck %s && \
+# RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean \
 # RUN:   %} \
 # RUN: %else \
 # RUN:   %{ \
@@ -12,5 +14,7 @@
 # RUN:     make -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean \
 # RUN:   %}
 
-# COM: No exceptions.
+# LIBCXX: No exceptions.
+# LIBCXX: Exception caught.
+# CHECK: No exceptions.
 # CHECK: Exception caught.

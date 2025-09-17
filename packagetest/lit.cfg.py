@@ -43,5 +43,6 @@ llvm_config.add_err_msg_substitutions()
 llvm_config.use_clang()
 llvm_config.config.substitutions.append(("%samples_dir", '"%s"' % config.samples_dir))
 llvm_config.config.substitutions.append(("%unpack_directory", '"%s"' % config.unpack_directory))
+llvm_config.config.substitutions.append(("%test_support_bin_dir", '"%s"' % config.test_support_bin_dir))
 
 config.environment["CLANG_NO_DEFAULT_CONFIG"] = "1"

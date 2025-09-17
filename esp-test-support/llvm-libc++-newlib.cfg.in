@@ -1,0 +1,65 @@
+# This testing configuration handles running the test suite against LLVM's libc++
+# using a static library.
+
+lit_config.load_config(config, '@CMAKE_CURRENT_BINARY_DIR@/cmake-bridge.cfg')
+
+config.name = 'libc++-@RUNTIME_VARIANT_NAME@'
+
+config.substitutions.append(('%{libc-include}', '@CMAKE_INSTALL_PREFIX@/include'))
+config.substitutions.append(('%{libc-lib}', '@CMAKE_INSTALL_PREFIX@/lib'))
+config.substitutions.append(('%{libc-linker-script}', '@LIBC_LINKER_SCRIPT@'))
+
+config.substitutions.append(('%{flags}', '@RUNTIME_TEST_ARCH_FLAGS@'))
+config.substitutions.append(('%{compile_flags}',
+    '-nostdinc++ -I %{include-dir} -I %{target-include-dir} -I %{libcxx-dir}/test/support'
+    ' -isystem %{libc-include}'
+
+    # Disable warnings in cxx_atomic_impl.h:
+    # "large atomic operation may incur significant performance penalty; the
+    # access size (4 bytes) exceeds the max lock-free size (0  bytes)"
+    ' -Wno-atomic-alignment'
+
+    # Various libc++ headers check for the definition of _NEWLIB_VERSION
+    ' -include _newlib_version.h'
+))
+config.substitutions.append(('%{link_flags}',
+    ' -nostdlib++ -L %{lib-dir}'
+    ' -lc++ -lc++abi -lunwind'
+    ' -nostdlib -L %{libc-lib}'
+    ' -lc -lm -lclang_rt.builtins -lsemihost -ltest_support -lpthread_stubs -lcrt1_sim_test -L @TEST_SUPPORT_BIN_DIR@/@RUNTIME_VARIANT_NAME@/lib'
+    ' -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32/lib'
+    ' -T %{libc-linker-script}'
+))
+config.substitutions.append(('%{exec}',
+    '%{executor} --execdir %T -- '
+))
+
+# LIBCXX-ESP-FIXME is the feature name used to XFAIL the
+# initial ESP failures until they can be properly diagnosed
+# and fixed. This allows easier detection of new test failures
+# and regressions. Note: New failures should not be suppressed
+# using this feature.
+config.available_features.add('LIBCXX-ESP-FIXME')
+
+# Long tests are prohibitively slow when run via emulation.
+config.long_tests = False
+config.large_tests = False
+
+config.enable_experimental = False
+
+config.excludes =[]
+with open('@LIBCXX_TEST_EXCLUDE_FILE@', encoding="utf-8") as f:
+    for line in f:
+        line = line.rstrip()
+        if len(line):
+            config.excludes.append(line)
+
+import os, site
+site.addsitedir(os.path.join('@LIBCXX_SOURCE_DIR@', 'utils'))
+import libcxx.test.params, libcxx.test.config
+libcxx.test.config.configure(
+    libcxx.test.params.DEFAULT_PARAMETERS,
+    libcxx.test.features.DEFAULT_FEATURES,
+    config,
+    lit_config
+)

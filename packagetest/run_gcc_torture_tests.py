@@ -18,6 +18,7 @@ def main():  # type: () -> None
     parser.add_argument('--timeout', '-t', help='Timeout in sec', type=int, default=5)
     parser.add_argument('--temp-path-prefix', '-r', help='', type=str)
     parser.add_argument('--xtensa', '-x', help='Run tests for Xtensa, or for RISCV if missed', action='store_true')
+    parser.add_argument('--test-support-bin-dir', '-s', help='Path to look for test support libraries', type=str, default='')
 
     args = parser.parse_args()
 
@@ -41,16 +42,17 @@ def main():  # type: () -> None
         logging.warning("Can not load list of skipped tests!")
 
     xtensa_test_cfg = {
-        "compile_opts": f"--target=xtensa-esp-elf -mcpu=esp32 -Wl,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive " \
-                        "-T memory.elf.ld -T app.elf.ld --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack ",
+        "compile_opts": f"--target=xtensa-esp-elf -mcpu=esp32 -lcrt1-sim -Wl,--whole-archive,-lgloss,-lsys_qemu,--no-whole-archive " \
+                        "-T memory.elf.ld -T app.elf.ld --ld-path=xtensa-esp32-elf-clang-ld -z noexecstack",
         "qemu_cmd": "qemu-system-xtensa",
         "qemu_machine": "esp32",
         "tests_to_skip": gcc_tests.TESTS_TO_SKIP_XTENSA,
         "per_file_opts": gcc_tests.PER_FILE_OPTS_XTENSA,
     }
     riscv_test_cfg = {
-        "compile_opts": "-march=rv32imc -mabi=ilp32 -lsemihost -T " + 
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "Inputs", "esp32c3.ld"),
+        "compile_opts": f"-march=rv32imc -mabi=ilp32 -lsemihost -lcrt1_sim_test" + 
+            " -L " + os.path.join(args.test_support_bin_dir, "rv32imc-zicsr-zifencei_ilp32", "lib") +
+            " -T " + os.path.join(os.path.dirname(os.path.abspath(__file__)), "Inputs", "esp32c3.ld"),
         "qemu_cmd": "qemu-system-riscv32",
         "qemu_machine": "esp32c3",
         "tests_to_skip": gcc_tests.TESTS_TO_SKIP_RISCV,
@@ -83,7 +85,7 @@ def main():  # type: () -> None
 
     clang_path = os.path.join(args.distro_path, "bin", "clang")
     cflags = "-Wno-implicit-function-declaration -Wno-implicit-int -Wno-int-conversion " \
-            "-fno-rtti -nostartfiles -lcrt1-sim -lpthread_stubs -lm"
+            "-fno-rtti -nostartfiles -lpthread_stubs -lm"
     cflags += " " + test_cfg["compile_opts"]
     for fname in test_files:
         rel_fname = os.path.relpath(fname, args.test_dir)

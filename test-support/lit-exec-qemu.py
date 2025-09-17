@@ -69,11 +69,13 @@ def main():
         help="optional arguments for the image",
     )
     args = parser.parse_args()
+    qemu_params = args.qemu_params.split(":") if args.qemu_params else []
+    qemu_params.extend(["-D", "/dev/null"])
     ret_code = run_qemu(
         args.qemu_command,
         args.qemu_machine,
         args.qemu_cpu,
-        args.qemu_params.split(":") if args.qemu_params else [],
+        qemu_params,
         args.image,
         [args.image] + args.arguments,
         args.timeout,

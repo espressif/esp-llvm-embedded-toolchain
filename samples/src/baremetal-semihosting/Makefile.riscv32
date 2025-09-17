@@ -3,7 +3,7 @@ include ../../Makefile.conf
 build: hello.elf
 
 hello.elf: *.c
-	$(BIN_PATH)/clang -march=rv32imc -mabi=ilp32 -fno-rtti -nostartfiles -lcrt1-sim -lsemihost -lpthread_stubs -g -T ../../ldscripts/esp32c3.ld -o hello.elf $^
+	$(BIN_PATH)/clang -march=rv32imc -mabi=ilp32 -fno-rtti -nostartfiles -g -lsemihost -lpthread_stubs -lcrt1_sim_test -L $(TEST_LIB_BASE_DIR)/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T ../../ldscripts/esp32c3.ld -o hello.elf $^
 
 run: hello.elf
 	qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel $<

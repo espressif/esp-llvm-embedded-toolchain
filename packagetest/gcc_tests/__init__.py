@@ -230,5 +230,5 @@ PER_FILE_OPTS_RISCV = {
 }
 
 PER_FILE_OPTS_XTENSA = {
-    os.path.join("abi", "call_abi_test.c"): os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Inputs", "call_abi_lib.o")
+    os.path.join("abi", "call_abi_test.c"): os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Inputs", "xtensa_call_abi_lib.o")
 }
