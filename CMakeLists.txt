@@ -650,7 +650,7 @@ endif()
 if(LLVM_TOOLCHAIN_ESPRESSIF)
     if("${LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER}" STREQUAL "")
         execute_process(
-            COMMAND git describe --abbrev=7
+            COMMAND git describe --abbrev=7 --always
             WORKING_DIRECTORY ${llvmproject_SOURCE_DIR}
             OUTPUT_STRIP_TRAILING_WHITESPACE
             OUTPUT_VARIABLE result
