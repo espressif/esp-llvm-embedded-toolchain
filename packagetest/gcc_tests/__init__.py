@@ -224,30 +224,6 @@ TESTS_TO_SKIP_XTENSA = [
 
 # Looks like stackoverflow in test when running QEMU
 "memcpy-1.c",
-
-# TODO: Investigate failures below which appeared after rebase on LLVM 21
-# test calls abort()
-# LLVM-487
-"va-arg-10.c",
-"20071213-1.c",
-"va-arg-2.c",
-"va-arg-17.c",
-"pr56205.c",
-'va-arg-16.c',
-'va-arg-19.c',
-'stdarg-2.c',
-'va-arg-24.c',
-'991216-2.c',
-'stdarg-4.c',
-'stdarg-1.c',
-'va-arg-5.c',
-'va-arg-11.c',
-'va-arg-9.c',
-'920501-8.c',
-'pr64979.c',
-'abi/call_abi_test.c',
-# qemu exits abnormally with "PANIC: Unhandled exception!"
-"multi-ix.c",
 ]
 
 PER_FILE_OPTS_RISCV = {
