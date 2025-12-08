@@ -192,17 +192,17 @@ option(
 )
 
 set(LLVM_TOOLCHAIN_ESP_GNU_TOOLCHAIN_VER
-    "14.2.0_20241119" CACHE STRING
+    "15.2.0_20251204" CACHE STRING
     "ESP GNU toolchain version to pick libgcc and libstdc++."
 )
 
 set(LLVM_TOOLCHAIN_ESP_RISCV_GNU_TOOLCHAIN_HASH
-    "75923baf795acd438cfa1ee0fa8a7c74" CACHE STRING
+    "04870d8d1aa281dc9c3045df63f84223" CACHE STRING
     "MD5 sum for ESP RISCV GNU toolchain distro archive file."
 )
 
 set(LLVM_TOOLCHAIN_ESP_XTENSA_GNU_TOOLCHAIN_HASH
-    "89a79ac3c0805adf49cb10142b04ca3b" CACHE STRING
+    "7d28ffa82a879a9ce3b968576af98d50" CACHE STRING
     "MD5 sum for ESP Xtensa GNU toolchain distro archive file."
 )
 
