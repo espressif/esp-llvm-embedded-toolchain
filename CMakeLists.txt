@@ -444,7 +444,7 @@ endif()
 
 if(LLVM_TOOLCHAIN_ESPRESSIF)
     set(llvm_project_patch_command "")
-    set(newlib_patch_command "")
+    set(newlib_patch_command git reset --quiet --hard && git clean --quiet --force -dx && git apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/esp-newlib.patch)
 else()
     # The patches are generated from custom branch, with followin command:
     #   git format-patch -k origin/main

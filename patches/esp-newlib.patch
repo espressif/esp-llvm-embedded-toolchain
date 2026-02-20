@@ -1,0 +1,26 @@
+commit 6356b47a8c9ff5515c7168f4537ffbc289cc9eb9
+Author: Alexey Gerenkov <alexey@espressif.com>
+Date:   Fri Mar 15 21:08:52 2024 +0300
+
+    newlib: Fix missed int types in 'stdatomic.h' for Clang
+
+diff --git a/newlib/libc/include/stdatomic.h b/newlib/libc/include/stdatomic.h
+index 13d1e1762a..92b192e9e9 100644
+--- a/newlib/libc/include/stdatomic.h
++++ b/newlib/libc/include/stdatomic.h
+@@ -44,6 +44,15 @@
+ #error "stdatomic.h does not support your compiler"
+ #endif
+ 
++#ifdef __clang__
++/*
++  This file is included from Clang's "stdatomic.h".
++  Atomic types definitions here (like 'atomic_int_least8_t') need types defined in "stdint.h",
++  so include it.
++*/
++#include <stdint.h>
++#endif
++
+ /*
+  * 7.17.1 Atomic lock-free macros.
+  */
