@@ -1,5 +1,5 @@
 
-# RUN: %if target={{.*}}-esp-elf  \
+# RUN: %if target={{.*}}-esp-unknown-elf  \
 # RUN:   %{ \
 # RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions clean && \
 # RUN:     make -f Makefile.riscv32 -C %samples_dir/src/cpp-baremetal-semihosting-exceptions run STDLIB=--stdlib=libc++ BIN_PATH=%unpack_directory/bin TEST_LIB_BASE_DIR=%test_support_bin_dir 2>&1 | FileCheck -check-prefix=LIBCXX %s && \

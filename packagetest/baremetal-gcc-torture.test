@@ -1,4 +1,4 @@
-# REQUIRES: target={{.*}}-esp-elf
+# REQUIRES: target={{.*}}-esp-unknown-elf
 
 # RUN: %S/run_gcc_torture_tests.py %S/gcc_tests -p %unpack_directory -r %t -s %test_support_bin_dir 2>&1 | FileCheck %s -check-prefix=RISCV
 # RISCV: Tests passed!

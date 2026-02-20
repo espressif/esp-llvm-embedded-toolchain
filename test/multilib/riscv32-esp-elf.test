@@ -1,5 +1,37 @@
-# REQUIRES: target={{.*}}-esp-elf
+# REQUIRES: target={{.*}}-esp-unknown-elf
 
-# RUN: %clang -print-multi-directory --target=riscv32-esp-elf | FileCheck %s
-# CHECK: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei_ilp32{{$}}
-# CHECK-EMPTY:
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf | FileCheck -check-prefix=DEFAULT %s
+# DEFAULT: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei_ilp32{{$}}
+# DEFAULT-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-unknown-elf -mcpu=esp32c2 | FileCheck -check-prefix=ESP32C2 %s
+# ESP32C2: riscv32-esp-unknown-elf/rv32imc-zicsr-zifencei_ilp32{{$}}
+# ESP32C2-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32c3 -fno-rtti | FileCheck -check-prefix=ESP32C3 %s
+# ESP32C3: riscv32-esp-unknown-elf/rv32imc-zicsr-zifencei_ilp32_no-rtti{{$}}
+# ESP32C3-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-unknown-elf -mcpu=esp32c6 | FileCheck -check-prefix=ESP32C6 %s
+# ESP32C6: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei_ilp32{{$}}
+# ESP32C6-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32c5 | FileCheck -check-prefix=ESP32C5 %s
+# ESP32C5: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei-zcb-zcmt_ilp32{{$}}
+# ESP32C5-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32c5 -fno-rtti | FileCheck -check-prefix=ESP32C5-NORTTI %s
+# ESP32C5-NORTTI: riscv32-esp-unknown-elf/rv32imac-zicsr-zifencei-zcb-zcmt_ilp32_no-rtti{{$}}
+# ESP32C5-NORTTI-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32c61 | FileCheck -check-prefix=ESP32C61 %s
+# ESP32C61: riscv32-esp-unknown-elf/rv32imacb-zicsr-zifencei-zcb-zcmt-zbc_ilp32{{$}}
+# ESP32C61-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32p4eco4 | FileCheck -check-prefix=ESP32P4ECO4 %s
+# ESP32P4ECO4: riscv32-esp-unknown-elf/rv32imafc-zicsr-zifencei-zcb-zcmt_ilp32f{{$}}
+# ESP32P4ECO4-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=riscv32-esp-elf -mcpu=esp32h4 | FileCheck -check-prefix=ESP32H4 %s
+# ESP32H4: riscv32-esp-unknown-elf/rv32imafcb-zicsr-zifencei-zcb-zcmt-zbc_ilp32f{{$}}
+# ESP32H4-EMPTY:

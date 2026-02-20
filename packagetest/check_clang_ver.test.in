@@ -1,5 +1,5 @@
-# REQUIRES: target={{.*}}-esp-elf
+# REQUIRES: target={{.*}}-esp-unknown-elf
 
-# RUN: %unpack_directory/bin/clang -march=rv32imc -mabi=ilp32 -fno-rtti --version 2>&1 | FileCheck %s
+# RUN: %unpack_directory/bin/clang -mcpu=esp32c3 -fno-rtti --version 2>&1 | FileCheck %s
 
 # CHECK: Espressif clang version {{[0-9]+\.[0-9]+\.[0-9]+}} ({{.+}}/llvm-project.git ${llvmproject_TAG})

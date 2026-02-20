@@ -1,4 +1,4 @@
-# UNSUPPORTED: target={{.*}}-esp-elf
+# UNSUPPORTED: target={{.*}}-esp-unknown-elf
 
 # RUN: make -C %samples_dir/src/baremetal-semihosting-aarch64 clean
 # RUN: make -C %samples_dir/src/baremetal-semihosting-aarch64 run BIN_PATH=%unpack_directory/bin 2>&1 | FileCheck %s

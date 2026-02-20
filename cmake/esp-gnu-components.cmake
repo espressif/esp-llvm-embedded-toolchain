@@ -35,6 +35,24 @@ function(
         string(REPLACE "/" ";" parts ${gnu_var})
         list(POP_FRONT parts arch_part)
         string(REPLACE "-" "_" arch_part ${arch_part})
+        # map arch variant to available GNU multilib archs
+        # GNU multidir : LLVM multidir
+        set(map0 "rv32imc_zicsr_zifencei:rv32imc_zicsr_zifencei")
+        set(map1 "rv32imac_zicsr_zifencei_zaamo_zalrsc:rv32imac_zicsr_zifencei")
+        set(map2 "rv32imac_zicsr_zifencei_zaamo_zalrsc_zcb_zcmp_zcmt:rv32imac_zicsr_zifencei_zcb_zcmt")
+        # it is OK to re-use GNU multilibs compiled w/o Zb as multilibs aimed to be linked with the code which uses Zb
+        set(map3 "rv32imac_zicsr_zifencei_zaamo_zalrsc_zcb_zcmp_zcmt:rv32imacb_zicsr_zifencei_zcb_zcmt_zbc")
+        set(map4 "rv32imafc_zicsr_zifencei_zaamo_zalrsc_zcb_zcmp_zcmt:rv32imafc_zicsr_zifencei_zcb_zcmt")
+        # it is OK to re-use GNU multilibs compiled w/o Zb as multilibs aimed to be linked with the code which uses Zb
+        set(map5 "rv32imafc_zicsr_zifencei_zaamo_zalrsc_zcb_zcmp_zcmt:rv32imafcb_zicsr_zifencei_zcb_zcmt_zbc")
+        foreach(map IN LISTS map0 map1 map2 map3 map4 map5)
+            string(REGEX MATCH ":${arch_part}$" match_str ${map})
+            if(NOT ${match_str} STREQUAL "")
+                string(REPLACE ":" ";" map_parts ${map})
+                list(POP_FRONT map_parts arch_part)
+                message(STATUS "Use GNU multilib arch: ${arch_part}")
+            endif()
+        endforeach()
         list(PREPEND parts ${arch_part})
         string(REPLACE ";" "/" gnu_var "${parts}")
     endif()

@@ -1,8 +1,8 @@
-// RUN: %if target={{.*}}-esp-elf  \
+// RUN: %if target={{.*}}-esp-unknown-elf  \
 // RUN:   %{ \
-// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --stdlib=libstdc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
+// RUN:     %clangxx -mcpu=esp32c3 -fno-rtti --stdlib=libstdc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
 // RUN:     qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel %t.out 2>&1 | FileCheck -check-prefix=LIBSTDCXX %s && \
-// RUN:     %clangxx -march=rv32imc -mabi=ilp32 -fno-rtti --stdlib=libc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
+// RUN:     %clangxx -mcpu=esp32c3 -fno-rtti --stdlib=libc++ -nostartfiles -lsemihost -ltest_support -lcrt1_sim_test -L %test_support_bin_dir/rv32imc-zicsr-zifencei_ilp32_no-rtti/lib -T %S/Inputs/esp32c3.ld %s -o %t.out && \
 // RUN:     qemu-system-riscv32 -nographic -machine esp32c3 --semihosting -kernel %t.out 2>&1 | FileCheck %s \
 // RUN:   %} \
 // RUN: %else \

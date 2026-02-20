@@ -1,5 +1,13 @@
-# REQUIRES: target={{.*}}-esp-elf
+# REQUIRES: target={{.*}}-esp-unknown-elf
 
-# RUN: %clang -print-multi-directory --target=xtensa-esp-elf | FileCheck %s
-# CHECK: xtensa-esp-unknown-elf/esp32{{$}}
-# CHECK-EMPTY:
+# RUN: %clang -print-multi-directory --target=xtensa-esp-elf | FileCheck -check-prefix=DEFAULT %s
+# DEFAULT: xtensa-esp-unknown-elf/esp32{{$}}
+# DEFAULT-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=xtensa-esp-elf -mcpu=esp32s2 -fno-rtti | FileCheck -check-prefix=ESP32S2 %s
+# ESP32S2: xtensa-esp-unknown-elf/esp32s2_no-rtti{{$}}
+# ESP32S2-EMPTY:
+
+# RUN: %clang -print-multi-directory --target=xtensa-esp-elf -mcpu=esp32s3 | FileCheck -check-prefix=ESP32S3 %s
+# ESP32S3: xtensa-esp-unknown-elf/esp32s3{{$}}
+# ESP32S3-EMPTY:

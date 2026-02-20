@@ -315,11 +315,11 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
     endif()
     if(LLVM_TOOLCHAIN_ENABLE_RISCV)
         set(LLVM_TARGETS_TO_BUILD RISCV CACHE STRING "")
-        set(LLVM_DEFAULT_TARGET_TRIPLE riscv32-esp-elf CACHE STRING "")
+        set(LLVM_DEFAULT_TARGET_TRIPLE riscv32-esp-unknown-elf CACHE STRING "")
     endif()
     if(LLVM_TOOLCHAIN_ENABLE_XTENSA)
         set(LLVM_EXPERIMENTAL_TARGETS_TO_BUILD Xtensa CACHE STRING "")
-        set(LLVM_DEFAULT_TARGET_TRIPLE xtensa-esp-elf CACHE STRING "")
+        set(LLVM_DEFAULT_TARGET_TRIPLE xtensa-esp-unknown-elf CACHE STRING "")
         if(LLVM_TOOLCHAIN_ENABLE_RISCV)
         else()
             set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "")
@@ -1593,7 +1593,7 @@ function(
     # Exceptions are architectures pre-armv7, which compiler-rt expects to
     # see in the triple because that's where it looks to decide whether to
     # use specific assembly sources.
-    if(NOT target_triple MATCHES "^(aarch64-none-elf|arm-none-eabi|armv[4-6]|riscv32-esp-elf|xtensa-esp-elf)")
+    if(NOT target_triple MATCHES "^(aarch64-none-elf|arm-none-eabi|armv[4-6]|riscv32-esp(-unknown)?-elf|xtensa-esp(-unknown)?-elf)")
         message(FATAL_ERROR "\
 Target triple name \"${target_triple}\" not compatible with compiler-rt.
 Use -march to specify the architecture.")

@@ -1,4 +1,4 @@
-# UNSUPPORTED: target={{.*}}-esp-elf
+# UNSUPPORTED: target={{.*}}-esp-unknown-elf
 
 # RUN: %clang -print-multi-directory --target=armv7r-none-eabi -mfpu=none         | FileCheck %s
 # RUN: %clang -print-multi-directory --target=armv7r-none-eabi -mfpu=none -marm   | FileCheck %s

@@ -50,8 +50,8 @@ def main():  # type: () -> None
         "per_file_opts": gcc_tests.PER_FILE_OPTS_XTENSA,
     }
     riscv_test_cfg = {
-        "compile_opts": f"-march=rv32imc -mabi=ilp32 -lsemihost -lcrt1_sim_test" + 
-            " -L " + os.path.join(args.test_support_bin_dir, "rv32imc-zicsr-zifencei_ilp32", "lib") +
+        "compile_opts": f"-mcpu=esp32c3 -lsemihost -lcrt1_sim_test" + 
+            " -L " + os.path.join(args.test_support_bin_dir, "rv32imc-zicsr-zifencei_ilp32_no-rtti", "lib") +
             " -T " + os.path.join(os.path.dirname(os.path.abspath(__file__)), "Inputs", "esp32c3.ld"),
         "qemu_cmd": "qemu-system-riscv32",
         "qemu_machine": "esp32c3",

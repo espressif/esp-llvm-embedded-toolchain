@@ -55,29 +55,41 @@ endfunction()
 
 # RISCV
 add_esp_library_variants_for_cpu(
-    rv32i-zicsr-zifencei
-    SUFFIX ilp32
-    COMPILE_FLAGS "-march=rv32i_zicsr_zifencei -mabi=ilp32"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i_zicsr_zifencei -mabi=ilp32"
-)
-add_esp_library_variants_for_cpu(
     rv32imc-zicsr-zifencei
     SUFFIX ilp32
-    COMPILE_FLAGS "-march=rv32imc_zicsr_zifencei -mabi=ilp32"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imc_zicsr_zifencei -mabi=ilp32"
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_c2p0_zicsr2p0_zifencei2p0 -mabi=ilp32"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_c2p0_zicsr2p0_zifencei2p0 -mabi=ilp32"
     QEMU_MACHINE "esp32c3"
 )
 add_esp_library_variants_for_cpu(
     rv32imac-zicsr-zifencei
     SUFFIX ilp32
-    COMPILE_FLAGS "-march=rv32imac_zicsr_zifencei -mabi=ilp32"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imac_zicsr_zifencei -mabi=ilp32"
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_a2p1_c2p0_zicsr2p0_zifencei2p0 -mabi=ilp32"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_a2p1_c2p0_zicsr2p0_zifencei2p0 -mabi=ilp32"
 )
 add_esp_library_variants_for_cpu(
-    rv32imafc-zicsr-zifencei-zba-zbb-zbc-zbs
+    rv32imac-zicsr-zifencei-zcb-zcmt
+    SUFFIX ilp32
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_a2p1_c2p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0 -mabi=ilp32"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_a2p1_c2p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0 -mabi=ilp32"
+)
+add_esp_library_variants_for_cpu(
+    rv32imacb-zicsr-zifencei-zcb-zcmt-zbc
+    SUFFIX ilp32
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_a2p1_c2p0_b1p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0_zbc1p0 -mabi=ilp32"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_a2p1_c2p0_b1p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0_zbc1p0 -mabi=ilp32"
+)
+add_esp_library_variants_for_cpu(
+    rv32imafc-zicsr-zifencei-zcb-zcmt
     SUFFIX ilp32f
-    COMPILE_FLAGS "-march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
-    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32imafc_zicsr_zifencei_zba_zbb_zbc_zbs -mabi=ilp32f"
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_a2p1_f2p2_c2p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0 -mabi=ilp32f"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_a2p1_f2p2_c2p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0 -mabi=ilp32f"
+)
+add_esp_library_variants_for_cpu(
+    rv32imafcb-zicsr-zifencei-zcb-zcmt-zbc
+    SUFFIX ilp32f
+    COMPILE_FLAGS "-march=rv32i2p1_m2p0_a2p1_f2p2_c2p0_b1p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0_zbc1p0 -mabi=ilp32f"
+    MULTILIB_FLAGS "--target=riscv32-esp-unknown-elf -march=rv32i2p1_m2p0_a2p1_f2p2_c2p0_b1p0_zicsr2p0_zifencei2p0_zcb1p0_zcmt1p0_zbc1p0 -mabi=ilp32f"
 )
 
 # Xtensa
