@@ -166,7 +166,7 @@ The process of building is very similar to ARM toolchain, but may need some addi
 git clone -b esp-17.0.1_20240419 https://github.com/espressif/esp-llvm-embedded-toolchain.git
 
 cmake $PWD/esp-llvm-embedded-toolchain -GNinja \
-        -DLLVMPROJECT_REPO_URL="https://github.com/espressif/llvm-project.git" \
+        -DLLVM_PROJECT_REPO_URL="https://github.com/espressif/llvm-project.git" \
         -DNEWLIB_REPO_URL="https://github.com/espressif/newlib-esp32.git" \
         -DBINUTILS_REPO_URL="https://github.com/espressif/binutils-gdb.git" \
         -DXTENSA_OVERLAYS_REPO_URL="https://github.com/espressif/xtensa-overlays.git" \
