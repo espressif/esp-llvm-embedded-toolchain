@@ -2782,6 +2782,60 @@ else()
     )
 endif()
 
+function(
+    separate_package_for_tool
+    tool_name
+)
+    set(pack_top_dir esp-${tool_name})
+    set(binary_package_name ${tool_name}-${ESP_TOOLCHAIN_VER}-${CPACK_SYSTEM_NAME})
+    set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
+    if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
+        set(exe_suffix ".exe")
+    else()
+        set(exe_suffix "")
+    endif()
+    add_custom_command(
+        OUTPUT ${package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E echo "Pack ${tool_name} ${unpack_directory}/bin/${tool_name}${exe_suffix} to ${package_filepath}"
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E make_directory ${pack_top_dir}/bin
+        COMMAND "${CMAKE_COMMAND}" -E copy ${unpack_directory}/bin/${tool_name}${exe_suffix} ${pack_top_dir}/bin/
+        COMMAND "${CMAKE_COMMAND}" -E rm ${unpack_directory}/bin/${tool_name}${exe_suffix}
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
+        # Copy MinGW runtime DLLs
+        foreach(mingw_runtime_dll
+            libwinpthread-1.dll # POSIX thread API implementation
+            libomp.dll
+            libclang_rt.asan_dynamic-x86_64.dll # clang runtime
+            libunwind.dll     # unwinder lib
+            libc++.dll     # C++ Standard Library
+        )
+            add_custom_command(
+                OUTPUT ${package_filepath}
+                COMMAND "${CMAKE_COMMAND}" -E copy ${unpack_directory}/bin/${mingw_runtime_dll} ${pack_top_dir}/bin/
+                APPEND
+            )
+        endforeach()
+    endif()
+    add_custom_command(
+        OUTPUT ${package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${package_filepath}
+        COMMAND "${CMAKE_COMMAND}" -E tar cJf ${package_filepath} ${pack_top_dir}
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
+        APPEND
+    )
+    add_custom_target(
+        package-${tool_name}
+        DEPENDS ${package_filepath}
+    )
+    add_custom_target(
+        print-${tool_name}-package-path
+        COMMAND "${CMAKE_COMMAND}" -E echo "${package_filepath}"
+    )
+endfunction()
 
 if(LLVM_TOOLCHAIN_ESPRESSIF)
     set(cpack_generator TXZ)
@@ -2856,6 +2910,22 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
         print-llvm-toolchain-target-libs-package-path
         COMMAND "${CMAKE_COMMAND}" -E echo "${target_libs_package_filepath}"
     )
+    # repack unpacked (and probably modified) toolchain package
+    # this target should be called in the following scenarios
+    # 1. 'unpack-llvm-toolchain'
+    # 2. Modify toolchain components, e.g. extract clangd/LLD to separate packages
+    # 3. 'repack-llvm-toolchain'
+    add_custom_target(
+        repack-llvm-toolchain
+        COMMAND "${CMAKE_COMMAND}" -E echo "Re-pack toolchain ${CMAKE_BINARY_DIR}/unpack/${pack_top_dir} to ${package_filepath}"
+        COMMAND "${CMAKE_COMMAND}" -E rm -f ${package_filepath}
+        # CMake tar does not support -C option, so use system one
+        COMMAND tar -C ${CMAKE_BINARY_DIR}/unpack -cJf ${package_filepath} ${pack_top_dir}
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    # Clangd package
+    separate_package_for_tool(clangd)
 else()
     if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW OR WIN32)
         set(cpack_generator ZIP)
@@ -2900,7 +2970,6 @@ add_dependencies(
     unpack-llvm-toolchain
     clear-unpack-directory
 )
-
 
 add_custom_target(check-llvm-toolchain)
 if(NOT (LLVM_TOOLCHAIN_C_LIBRARY STREQUAL none))
