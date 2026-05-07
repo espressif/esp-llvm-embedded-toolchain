@@ -84,7 +84,7 @@ def main():  # type: () -> None
             test_files.append(os.path.join(args.test_dir, f))
 
     clang_path = os.path.join(args.distro_path, "bin", "clang")
-    cflags = "-Wno-implicit-function-declaration -Wno-implicit-int -Wno-int-conversion " \
+    cflags = "-Wno-implicit-function-declaration -Wno-implicit-int -Wno-int-conversion -Wno-incompatible-pointer-types " \
             "-fno-rtti -nostartfiles -lpthread_stubs -lm"
     cflags += " " + test_cfg["compile_opts"]
     for fname in test_files:

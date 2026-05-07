@@ -36,7 +36,7 @@ config.substitutions.append(('%{link_flags}',
     ' -T %{libc-linker-script}'
 ))
 config.substitutions.append(('%{exec}',
-    '%{executor} --execdir %T -- '
+    '%{executor} --execdir %t -- '
 ))
 
 import os, site

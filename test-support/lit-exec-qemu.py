@@ -69,6 +69,8 @@ def main():
         help="optional arguments for the image",
     )
     args = parser.parse_args()
+    if not args.execdir.is_dir():
+        args.execdir = args.execdir.parent
     qemu_params = args.qemu_params.split(":") if args.qemu_params else []
     qemu_params.extend(["-D", "/dev/null"])
     ret_code = run_qemu(

@@ -1,3 +1,4 @@
+addressable_functions.sh.cpp
 arg.pass.cpp
 array.compile.pass.cpp
 array.pass.cpp
@@ -37,6 +38,7 @@ cfenv.compile.pass.cpp
 charconv.compile.pass.cpp
 chrono.compile.pass.cpp
 cinttypes.compile.pass.cpp
+clear.pass.cpp
 climits.compile.pass.cpp
 cmath.compile.pass.cpp
 cmath.pass.cpp
@@ -133,8 +135,10 @@ format.runtime_format.pass.cpp
 formatted_size.locale.pass.cpp
 formatted_size.pass.cpp
 formatter.c_string.pass.cpp
+formatter.char_array.pass.cpp
 formatter.char.fsigned-char.pass.cpp
 formatter.char.funsigned-char.pass.cpp
+formatter.char.pass.cpp
 formatter.day.pass.cpp
 formatter.duration.pass.cpp
 formatter.file_time.pass.cpp
@@ -162,12 +166,19 @@ formatter.year_month.pass.cpp
 formatter.year.pass.cpp
 from_range.pass.cpp
 get_allocator.pass.cpp
+get_double.pass.cpp
+get_float.pass.cpp
 get_id.pass.cpp
+get_line_delim_rv.pass.cpp
+get_line_delim.pass.cpp
+get_line_rv.pass.cpp
 get_line.pass.cpp
 get_long_double_en_US.pass.cpp
 get_long_double_fr_FR.pass.cpp
 get_long_double_ru_RU.pass.cpp
 get_long_double_zh_CN.pass.cpp
+get_long_double.pass.cpp
+get_long.pass.cpp
 get_string_en_US.pass.cpp
 get_wrapped.pass.cpp
 grep.pass.cpp
@@ -182,6 +193,8 @@ insert_initializer_list.pass.cpp
 insert_iter_iter.pass.cpp
 insert_or_assign_transparent.pass.cpp
 insert_range_after.pass.cpp
+insert_range_sorted_equivalent.pass.cpp
+insert_range_sorted_unique.pass.cpp
 insert_range.pass.cpp
 insert_rvalue.pass.cpp
 insert_transparent.pass.cpp
@@ -203,6 +216,8 @@ join.pass.cpp
 latch.compile.pass.cpp
 left_folds.pass.cpp
 length.pass.cpp
+lexically_normal.pass.cpp
+lexically_relative_and_proximate.pass.cpp
 load.pass.cpp
 locale-specific_form.pass.cpp
 log.pass.cpp
@@ -227,6 +242,7 @@ memory_resource.compile.pass.cpp
 memory.compile.pass.cpp
 merge_comp.pass.cpp
 merge.pass.cpp
+mode.alloc.pass.cpp
 move_assign_clears.pass.cpp
 move_assign.pass.cpp
 move.pass.cpp
@@ -265,8 +281,12 @@ ptr.pass.cpp
 push_range.pass.cpp
 put_double.hex.pass.cpp
 put_double.pass.cpp
+put_long_double_en_US.pass.cpp
+put_long_double_ru_RU.pass.cpp
+put_long_double_zh_CN.pass.cpp
 put_long_double.hex.pass.cpp
 put_long_double.pass.cpp
+put_long_long.pass.cpp
 put_money.pass.cpp
 queue.compile.pass.cpp
 range.pass.cpp
@@ -284,6 +304,7 @@ ranges_sort_heap.pass.cpp
 ranges.compile.pass.cpp
 ranges.contains_subrange.pass.cpp
 ranges.copy_backward.pass.cpp
+ranges.copy_n.segmented.pass.cpp
 ranges.copy.pass.cpp
 ranges.copy.segmented.pass.cpp
 ranges.ends_with.pass.cpp
@@ -353,6 +374,7 @@ sleep_until.pass.cpp
 sorted_container.pass.cpp
 sorted_initializer_list.pass.cpp
 sorted_iter_iter.pass.cpp
+stable_sort.pass.cpp
 stack.compile.pass.cpp
 std.pass.cpp
 stdatomic.h.compile.pass.cpp
@@ -362,12 +384,16 @@ store.pass.cpp
 str.allocator_propagation.pass.cpp
 str.pass.cpp
 str.string_view.pass.cpp
+stream_insert.pass.cpp
 stream.pass.cpp
 streambuf.compile.pass.cpp
 string_flg.pass.cpp
 string_view.alloc.pass.cpp
 string_view.mode.alloc.pass.cpp
 string_view.mode.pass.cpp
+string-alloc.mode.pass.cpp
+string.alloc.pass.cpp
+string.mode.alloc.pass.cpp
 string.move.mode.pass.cpp
 string.pass.cpp
 string.string_view.pass.cpp
@@ -383,6 +409,8 @@ sys_time.ostream.pass.cpp
 system_error.compile.pass.cpp
 tan.pass.cpp
 tanh.pass.cpp
+test_exception_storage.threads.pass.cpp
+test_neg_one.pass.cpp
 test1.pass.cpp
 test2.pass.cpp
 test3.pass.cpp
@@ -413,6 +441,7 @@ vformat_to.locale.pass.cpp
 vformat_to.pass.cpp
 vformat.locale.pass.cpp
 vformat.pass.cpp
+view.pass.cpp
 visit_return_type.pass.cpp
 visit.pass.cpp
 visit.return_type.pass.cpp

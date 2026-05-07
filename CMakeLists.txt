@@ -1719,6 +1719,11 @@ function(
             -DLIBCXXABI_ENABLE_STATIC_UNWINDER=${enable_exceptions}
             -DLIBCXX_ENABLE_EXCEPTIONS=${enable_exceptions}
             -DLIBCXX_ENABLE_RTTI=${enable_rtti}
+            -DRUNTIMES_USE_LIBC=picolibc
+        )
+    elseif(LLVM_TOOLCHAIN_C_LIBRARY STREQUAL newlib)
+        list(APPEND extra_cmake_options
+            -DRUNTIMES_USE_LIBC=newlib
         )
     endif()
 
