@@ -1236,9 +1236,13 @@ function(
 )
 
     set(make_flags)
-    ProcessorCount(nproc)
-    if(NOT nproc EQUAL 0)
-        set(make_flags -j${nproc})
+    if(LLVM_PARALLEL_COMPILE_JOBS)
+        set(make_flags -j${LLVM_PARALLEL_COMPILE_JOBS})
+    else()
+        ProcessorCount(nproc)
+        if(NOT nproc EQUAL 0)
+            set(make_flags -j${nproc})
+        endif()
     endif()
 
     ExternalProject_Add(
@@ -1668,6 +1672,8 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         -DCOMPILER_RT_EMULATOR=${test_executor}
         -DCOMPILER_RT_TEST_COMPILER=${LLVM_BINARY_DIR}/bin/clang
         -DCOMPILER_RT_TEST_COMPILER_CFLAGS=${compiler_rt_test_flags}
+        -DLLVM_PARALLEL_COMPILE_JOBS=${LLVM_PARALLEL_COMPILE_JOBS}
+        -DLLVM_PARALLEL_LINK_JOBS=${LLVM_PARALLEL_LINK_JOBS}
         -DLLVM_LIT_ARGS=${LLVM_LIT_ARGS}
         -DLLVM_CMAKE_DIR=${LLVM_BINARY_DIR}/lib/cmake/llvm
         -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON
@@ -1739,9 +1745,11 @@ function(
         -DCMAKE_BUILD_TYPE=MinSizeRel
         -DCMAKE_CXX_COMPILER=${LLVM_BINARY_DIR}/bin/clang++${CMAKE_EXECUTABLE_SUFFIX}
         -DCMAKE_CXX_COMPILER_TARGET=${target_triple}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_CXX_FLAGS=${runtimes_flags}
         -DCMAKE_C_COMPILER=${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX}
         -DCMAKE_C_COMPILER_TARGET=${target_triple}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_C_FLAGS=${runtimes_flags}
         -DCMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE}
         -DCMAKE_INSTALL_PREFIX=${instal_dir}
@@ -1778,6 +1786,8 @@ function(
         -DLIBUNWIND_USE_COMPILER_RT=ON
         -DLIBUNWIND_ENABLE_FRAME_APIS=ON
         -DLIBUNWIND_TEST_PARAMS=executor=${test_executor}
+        -DLLVM_PARALLEL_COMPILE_JOBS=${LLVM_PARALLEL_COMPILE_JOBS}
+        -DLLVM_PARALLEL_LINK_JOBS=${LLVM_PARALLEL_LINK_JOBS}
         -DLLVM_LIT_ARGS=${LLVM_LIT_ARGS}
         -DLLVM_ENABLE_RUNTIMES=libcxxabi,libcxx,libunwind
         -DRUNTIME_TEST_ARCH_FLAGS=${flags}
@@ -3020,6 +3030,8 @@ function(
         -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_SYSTEM_NAME=Windows
+        -DLLVM_PARALLEL_COMPILE_JOBS=${LLVM_PARALLEL_COMPILE_JOBS}
+        -DLLVM_PARALLEL_LINK_JOBS=${LLVM_PARALLEL_LINK_JOBS}
         -DLLVM_APPEND_VC_REV=${LLVM_APPEND_VC_REV}
         -DCLANG_REPOSITORY_STRING=${CLANG_REPOSITORY_STRING}
         -DCLANG_TABLEGEN=${LLVM_BINARY_DIR}/bin/clang-tblgen${CMAKE_EXECUTABLE_SUFFIX}

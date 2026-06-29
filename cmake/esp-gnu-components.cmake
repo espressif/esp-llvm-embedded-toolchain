@@ -256,9 +256,13 @@ function(
     endif()
 
     set(make_flags)
-    ProcessorCount(nproc)
-    if(NOT nproc EQUAL 0)
-        set(make_flags -j${nproc})
+    if(LLVM_PARALLEL_COMPILE_JOBS)
+        set(make_flags -j${LLVM_PARALLEL_COMPILE_JOBS})
+    else()
+        ProcessorCount(nproc)
+        if(NOT nproc EQUAL 0)
+            set(make_flags -j${nproc})
+        endif()
     endif()
 
     ExternalProject_Add(
