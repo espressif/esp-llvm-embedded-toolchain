@@ -1233,6 +1233,13 @@ function(
       "STRIP_FOR_TARGET=${LLVM_BINARY_DIR}/bin/llvm-strip"
       "CFLAGS_FOR_TARGET=${flags} ${cflags_for_target}"
       "CCASFLAGS=${flags} ${ccasflags_for_target}"
+      # by default ccache includes the compiler’s size and modification time into hash calculation
+      # since we build clang it's mtime changes on every build, so all bins are invalidated.
+      # Force ccache to use hash calculation based on compiler's binary content instead.
+      # This can improve build time when clang binary did not change since last build:
+      # 1) running build in default branch pipeline after MR is merged.
+      # 2) MR changes are not related to clang, e.g. changes in runtime libraries code.
+      "CCACHE_COMPILERCHECK=content"
 )
 
     set(make_flags)
@@ -1650,8 +1657,10 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         -DCMAKE_CXX_COMPILER=${LLVM_BINARY_DIR}/bin/clang++${CMAKE_EXECUTABLE_SUFFIX}
         -DCMAKE_CXX_COMPILER_TARGET=${target_triple}
         -DCMAKE_CXX_FLAGS=${runtimes_flags}
+        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_C_COMPILER=${LLVM_BINARY_DIR}/bin/clang${CMAKE_EXECUTABLE_SUFFIX}
         -DCMAKE_C_COMPILER_TARGET=${target_triple}
+        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_C_FLAGS=${runtimes_flags}
         -DCMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -1686,6 +1695,16 @@ Hard-float library with target triple \"${target_triple}\" must end \"-eabihf\""
         # Always run the build command so that incremental builds are correct.
         BUILD_ALWAYS TRUE
         CONFIGURE_HANDLED_BY_BUILD TRUE
+        # by default ccache includes the compiler’s size and modification time into hash calculation
+        # since we build clang it's mtime changes on every build, so all bins are invalidated.
+        # Force ccache to use hash calculation based on compiler's binary content instead.
+        # This can improve build time when clang binary did not change since last build:
+        # 1) running build in default branch pipeline after MR is merged.
+        # 2) MR changes are not related to clang, e.g. changes in runtime libraries code.
+        # Overriding the default build command to inject environment variable
+        BUILD_COMMAND
+            ${CMAKE_COMMAND} -E env CCACHE_COMPILERCHECK=content
+            ${CMAKE_COMMAND} --build <BINARY_DIR>
         INSTALL_COMMAND ${CMAKE_COMMAND} --install .
         # Copy compiler-rt lib directory, moving libraries out of their
         # target-specific subdirectory.
@@ -1794,6 +1813,16 @@ function(
         -DRUNTIME_VARIANT_NAME=${variant}
         -DTEST_SUPPORT_BIN_DIR=${esp_test_support_install_dir}
         ${extra_cmake_options}
+        # by default ccache includes the compiler’s size and modification time into hash calculation
+        # since we build clang it's mtime changes on every build, so all bins are invalidated.
+        # Force ccache to use hash calculation based on compiler's binary content instead.
+        # This can improve build time when clang binary did not change since last build:
+        # 1) running build in default branch pipeline after MR is merged.
+        # 2) MR changes are not related to clang, e.g. changes in runtime libraries code.
+        # Overriding the default build command to inject environment variable
+        BUILD_COMMAND
+            ${CMAKE_COMMAND} -E env CCACHE_COMPILERCHECK=content
+            ${CMAKE_COMMAND} --build <BINARY_DIR>
         STEP_TARGETS build
         USES_TERMINAL_CONFIGURE FALSE
         USES_TERMINAL_BUILD TRUE
