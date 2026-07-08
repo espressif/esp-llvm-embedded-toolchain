@@ -2848,6 +2848,13 @@ function(
         USES_TERMINAL
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
+    if(tool_name STREQUAL "clangd")
+        add_custom_command(
+            OUTPUT ${package_filepath}
+            COMMAND "${CMAKE_COMMAND}" -E copy_directory ${unpack_directory}/lib/clang ${pack_top_dir}/lib/clang
+            APPEND
+        )
+    endif()
     if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
         # Copy MinGW runtime DLLs
         foreach(mingw_runtime_dll
