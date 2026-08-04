@@ -2831,6 +2831,14 @@ function(
     separate_package_for_tool
     tool_name
 )
+    # Optional arguments:
+    #   KEEP_IN_TOOLCHAIN - pack a copy of the tool while keeping it in the
+    #                       main toolchain package as well (e.g. lld, which
+    #                       the toolchain itself needs for linking).
+    #   SYMLINKS <names>  - additional names provided in bin/ next to the tool
+    #                       (symlinks on Unix, copies for MinGW), e.g. ld.lld
+    #                       for lld, which GCC's -fuse-ld=lld requires.
+    cmake_parse_arguments(ARG "KEEP_IN_TOOLCHAIN" "" "SYMLINKS" ${ARGN})
     set(pack_top_dir esp-${tool_name})
     set(binary_package_name ${tool_name}-${ESP_TOOLCHAIN_VER}-${CPACK_SYSTEM_NAME})
     set(package_filepath ${CMAKE_BINARY_DIR}/${binary_package_name}${package_filename_extension})
@@ -2845,7 +2853,6 @@ function(
         COMMAND "${CMAKE_COMMAND}" -E rm -rf ${pack_top_dir}
         COMMAND "${CMAKE_COMMAND}" -E make_directory ${pack_top_dir}/bin
         COMMAND "${CMAKE_COMMAND}" -E copy ${unpack_directory}/bin/${tool_name}${exe_suffix} ${pack_top_dir}/bin/
-        COMMAND "${CMAKE_COMMAND}" -E rm ${unpack_directory}/bin/${tool_name}${exe_suffix}
         USES_TERMINAL
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -2856,6 +2863,29 @@ function(
             APPEND
         )
     endif()
+    if(NOT ARG_KEEP_IN_TOOLCHAIN)
+        add_custom_command(
+            OUTPUT ${package_filepath}
+            COMMAND "${CMAKE_COMMAND}" -E rm ${unpack_directory}/bin/${tool_name}${exe_suffix}
+            APPEND
+        )
+    endif()
+    foreach(link_name ${ARG_SYMLINKS})
+        if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
+            # Windows distros ship copies instead of symlinks.
+            add_custom_command(
+                OUTPUT ${package_filepath}
+                COMMAND "${CMAKE_COMMAND}" -E copy ${pack_top_dir}/bin/${tool_name}${exe_suffix} ${pack_top_dir}/bin/${link_name}${exe_suffix}
+                APPEND
+            )
+        else()
+            add_custom_command(
+                OUTPUT ${package_filepath}
+                COMMAND "${CMAKE_COMMAND}" -E create_symlink ${tool_name} ${pack_top_dir}/bin/${link_name}
+                APPEND
+            )
+        endif()
+    endforeach()
     if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW)
         # Copy MinGW runtime DLLs
         foreach(mingw_runtime_dll
@@ -2978,6 +3008,10 @@ if(LLVM_TOOLCHAIN_ESPRESSIF)
     )
     # Clangd package
     separate_package_for_tool(clangd)
+    # Standalone LLD package (e.g. for linking with GCC via -fuse-ld=lld).
+    # The linker stays in the main toolchain package; ld.lld is the name the
+    # GCC driver searches for.
+    separate_package_for_tool(lld KEEP_IN_TOOLCHAIN SYMLINKS ld.lld)
 else()
     if(LLVM_TOOLCHAIN_CROSS_BUILD_MINGW OR WIN32)
         set(cpack_generator ZIP)
