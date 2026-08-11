@@ -1550,7 +1550,7 @@ macro(
         )
         if(LLVM_TOOLCHAIN_ESPRESSIF)
             # TODO: review
-            # set(newlib_nano_flags "${flags} -D_GNU_SOURCE")
+            set(newlib_nano_flags ${flags})
             add_newlib(
                 "${directory}_nano"
                 "${variant}_nano"
